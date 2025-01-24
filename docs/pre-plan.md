@@ -48,7 +48,7 @@
 
 #### **Dashboard UI**
 
-![SocksAI Dashboard UI/ Interface](/socksai_dashboard.png)
+![SocksAI Dashboard UI/ Interface](/assests/socksai_dashboard.png)
 
 #### **Dashboard Features**
 

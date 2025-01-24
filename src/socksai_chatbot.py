@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.header("SocksAI Chatbot")
+st.title("SocksAI Chatbot")
 
 # Initialize session state for messages
 if "messages" not in st.session_state:
