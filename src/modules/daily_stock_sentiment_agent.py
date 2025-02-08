@@ -10,9 +10,9 @@ from phi.tools.yfinance import YFinanceTools
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-# from rich.pretty import pprint
+from rich.pretty import pprint
 
-from models.models import NewsModel, StockModel, AnalystModel, TeamModel
+from .models.models import NewsModel, StockModel, AnalystModel, TeamModel
 
 # Configure logging
 logging.basicConfig(
@@ -192,6 +192,8 @@ class DailyStockSentimentAgent:
             tool_choice="auto",
         )
 
+        self.load_stocks()
+
     def is_trading_day(self) -> bool:
         """
         Check if today is a trading day.
@@ -202,16 +204,30 @@ class DailyStockSentimentAgent:
         today = dt.date.today()
         return today.weekday() < 5 and today not in self.indian_holidays
 
-    def add_stock(self, stock_symbol: str):
+    def load_stocks(self):
         """
-        Add a stock symbol to the list for analysis.
+        Load stock symbols from MongoDB when initializing the class.
+        """
+        stored_data = self.db.daily_stocks.find_one(
+            {"_id": "daily_stocks_list"}, {"_id": 0, "stocks": 1}
+        )
+        self.stocks = stored_data["stocks"] if stored_data else []
+
+    def add_stocks(self, stock_symbols: list[str]):
+        """
+        Add a list of stock symbols to MongoDB for tracking.
 
         Args:
-            stock_symbol (str): The stock symbol to add.
+            stock_symbols (list[str]): List of stock symbols to add.
         """
-        if stock_symbol not in self.stocks:
-            self.stocks.append(stock_symbol)
-            logging.info(f"Added stock: {stock_symbol}")
+        self.db.daily_stocks.update_one(
+            {"_id": "daily_stocks_list"},
+            {
+                "$addToSet": {"stocks": {"$each": stock_symbols}}
+            },
+            upsert=True,
+        )
+        logging.info(f"Added stocks: {stock_symbols}")
 
     def fetch_stock_data(self):
         """
@@ -347,7 +363,7 @@ class DailyStockSentimentAgent:
                 response = self.agent_team.run(
                     f"Perform a quick analysis for the stock {stock}."
                 )
-                summaries.append(response)
+                summaries.append(response.content.dict())
                 logging.info(f"Quick analysis for {stock} completed.")
             except Exception as e:
                 logging.error(f"Error during quick analysis for {stock}: {e}")

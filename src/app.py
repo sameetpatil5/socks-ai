@@ -71,6 +71,10 @@ st.markdown(
             float: right;
             padding-top: 0;
         }
+        div[data-testid="stDialog"] div[role="dialog"]:has(.big-dialog) {
+            width: 80vw;
+            height: 80vh;
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -214,5 +218,6 @@ if qdrant_api_key and qdrant_url:
 st.sidebar.write(
     "🔒 Your keys are stored securely in the session and won't be shared or logged."
 )
+
 st.sidebar.button("Clear Keys", on_click=clear_environment_keys)
 st.sidebar.divider()

@@ -1,10 +1,20 @@
 import streamlit as st
 from modules.find_stock_agent import FindStockAgent
+from modules.daily_stock_sentiment_agent import DailyStockSentimentAgent
 from contextlib import contextmanager
+import os
 
 # Initialize stock lists in session state
+if "fsa" not in st.session_state:
+    st.session_state.fsa = FindStockAgent()
+
+if "dssa" not in st.session_state:
+    st.session_state.dssa = DailyStockSentimentAgent(
+        os.environ.get("MONGO_URI"), os.environ.get("MONGO_DB")
+    )
+
 if "daily_stocks" not in st.session_state:
-    st.session_state.daily_stocks = []
+    st.session_state.daily_stocks = st.session_state.dssa.stocks
 
 if "training_stocks" not in st.session_state:
     st.session_state.training_stocks = []
@@ -14,6 +24,7 @@ if "found_stocks" not in st.session_state:
 
 if "added_stocks" not in st.session_state:
     st.session_state.added_stocks = []
+
 
 # Styling for horizontal elements
 HORIZONTAL_STYLE = """
@@ -58,13 +69,49 @@ def st_horizontal():
         yield
 
 
+@st.dialog("Quick Analysis")
+def quick_analysis():
+    """Perform a quick analysis for all monitored stocks."""
+
+    st.html("<span class='big-dialog'></span>")
+
+    if not st.session_state.dssa.stocks:
+        st.toast("No stocks to analyze.")
+        return
+
+    summaries = st.session_state.dssa.perform_quick_analysis()
+
+    st.markdown("## 📊 Quick Analysis Summaries")
+
+    if not summaries:
+        st.info("No analysis results available.")
+        return
+
+    for summary in summaries:
+        with st.container():
+            # Extract stock details from the summary (assuming summary is a dict)
+            symbol = summary.get("symbol", "N/A")
+            price_data = summary.get("price", {})
+            price = price_data.get("price", "N/A")  # Float
+            currency = price_data.get("currency", "")  # String
+            full_price = f"{currency} {price}" if price != "N/A" else "N/A"
+            summary_text = summary.get("summary", "No summary available.")
+
+            # Display Stock Info
+            st.markdown(f"### 📈 {symbol} - {full_price}")
+            # st.markdown(f"**💡 Summary:** {summary_text}")
+
+            # Optional: Use an Expander for a cleaner look
+            with st.expander("🔍 Detailed Analysis"):
+                st.write(summary_text)
+
+
 @st.dialog("Add Daily Stocks")
 def add_daily_stock():
     """Allows users to search for and add daily stocks."""
     query = st.text_input("Enter a stock symbol or query:")
     if st.button("Find Stocks", key="find_daily_stocks"):
-        find_stock_agent = FindStockAgent()
-        st.session_state.found_stocks = find_stock_agent.add_stock(query)
+        st.session_state.found_stocks = st.session_state.fsa.add_stock(query)
         st.session_state.added_stocks = []
         if not st.session_state.found_stocks:
             st.toast("No stocks found. Please try again.")
@@ -86,7 +133,13 @@ def add_daily_stock():
 
         with st_horizontal():
             if st.button("Confirm & Add", key="confirm_daily_stocks"):
-                st.session_state.daily_stocks.extend(st.session_state.added_stocks)
+                final_stocks = [
+                    stock
+                    for stock in st.session_state.added_stocks
+                    if stock not in st.session_state.daily_stocks
+                ]
+                st.session_state.daily_stocks.extend(final_stocks)
+                st.session_state.dssa.add_stocks(final_stocks)
                 st.session_state.found_stocks = []
                 st.session_state.added_stocks = []
                 st.rerun()
@@ -135,8 +188,7 @@ def add_training_stock():
     """Allows users to search for and add training stocks."""
     query = st.text_input("Enter a stock symbol or query:")
     if st.button("Find Stocks", key="find_training_stocks"):
-        find_stock_agent = FindStockAgent()
-        st.session_state.found_stocks = find_stock_agent.add_stock(query)
+        st.session_state.found_stocks = st.session_state.fsa.add_stock(query)
         st.session_state.added_stocks = []
         if not st.session_state.found_stocks:
             st.toast("No stocks found. Please try again.")
@@ -158,7 +210,13 @@ def add_training_stock():
 
         with st_horizontal():
             if st.button("Confirm & Add", key="confirm_training_stocks"):
-                st.session_state.training_stocks.extend(st.session_state.added_stocks)
+                st.session_state.training_stocks.extend(
+                    [
+                        stock
+                        for stock in st.session_state.added_stocks
+                        if stock not in st.session_state.training_stocks
+                    ]
+                )
                 st.session_state.found_stocks = []
                 st.session_state.added_stocks = []
                 st.rerun()
@@ -213,9 +271,7 @@ with st.container(border=True):
             with st.container(border=True):
                 st.markdown(f"**{stock}**")
     with st_horizontal():
-        st.button(
-            "Add more Stocks", on_click=add_daily_stock, key="add_daily_stocks"
-        )
+        st.button("Add more Stocks", on_click=add_daily_stock, key="add_daily_stocks")
         st.button(
             "Remove Stocks",
             on_click=remove_daily_stock,
@@ -223,7 +279,7 @@ with st.container(border=True):
             type="primary",
             disabled=not st.session_state.daily_stocks,
         )
-        st.button("Perform Quick Analysis", key="quick_analysis")
+        st.button("Perform Quick Analysis", on_click=quick_analysis, key="quick_analysis")
 
 # Training Stocks Section
 with st.container(border=True):
