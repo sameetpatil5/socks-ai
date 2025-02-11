@@ -1,72 +1,112 @@
 import streamlit as st
-from contextlib import contextmanager
+import yfinance as yf
+from modules.stock_chart_agent import StockChartAgent
+from streamlit_components.st_horizontal import st_horizontal
+import datetime
 
-# Styling for horizontal elements
-HORIZONTAL_STYLE = """
-    <style class="hide-element">
-        /* Hides the style container and removes the extra spacing */
-        .element-container:has(.hide-element) {
-            display: none;
-        }
-        /*
-            The selector for >.element-container is necessary to avoid selecting the whole
-            body of the streamlit app, which is also a stVerticalBlock.
-        */
-        div[data-testid="stVerticalBlock"]:has(> .element-container .horizontal-marker) {
-            display: flex;
-            flex-direction: row !important;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: baseline;
-        }
-        /* Buttons and their parent container all have a width of 704px, which we need to override */
-        div[data-testid="stVerticalBlock"]:has(> .element-container .horizontal-marker) div {
-            width: max-content !important;
-        }
-        /* Just an example of how you would style buttons, if desired */
-        /*
-        div[data-testid="stVerticalBlock"]:has(> .element-container .horizontal-marker) button {
-            border-color: red;
-        }
-        */
-    </style>
-"""
+if "plot_type" not in st.session_state:
+    st.session_state.plot_type = "none"
+if "sca" not in st.session_state:
+    st.session_state.sca = StockChartAgent()
 
 
-@contextmanager
-def st_horizontal():
-    st.markdown(HORIZONTAL_STYLE, unsafe_allow_html=True)
-    with st.container():
-        st.markdown(
-            '<span class="hide-element horizontal-marker"></span>',
-            unsafe_allow_html=True,
-        )
-        yield
+@st.cache_data(ttl=datetime.timedelta(days=1), max_entries=100)
+def plot_chart(symbol, period, interval, plot_type, chart_type, indicators):
+    fig = st.session_state.sca.plot_chart(
+        symbol, period, interval, plot_type, chart_type, indicators
+    )
+    return fig
+
+
+def reset_selections():
+    for key in ["symbol", "time_period", "chart_type", "indicators"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+    st.rerun()
 
 
 st.title("Socks Chart")
 
 with st.container(border=True):
     st.markdown("### Stock & Indicators Selection")
-    options, indicators, predictors = st.columns(3)
-    with options:
-        st.write("Select Views Prediction / Current Position")
-        with st_horizontal():
-            st.button("demo 1")
-            st.button("demo 2")
-            st.button("demo 3")
-    with indicators:
-        with st_horizontal():
-            st.button("demo 4")
-            st.button("demo 5")
-            st.button("demo 6")
-    with predictors:
-        st.selectbox("select", options=["hi", "bye"])
 
-    # Stocks Graph and Sentiment Analysis
-    st.markdown("### Stocks Graph with Indicators & Predictions")
-    st.area_chart()
-    with st_horizontal():
-        st.button("Plot", icon="📈")
-        st.button("Apply", icon="✅")
-        st.button("Refresh", icon="🔄️")
+    with st.container():
+        col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 1.5, 4])
+
+        with col1:
+            symbol= st.text_input(
+                "Stock Symbol",
+                placeholder="Stock ticker symbol",
+            ).upper()
+        with col2:
+            time_period = st.selectbox(
+                "Time Frame",
+                ["1d", "1w", "1mo", "3mo", "6mo", "1y", "5y"],
+                index=2,
+            )
+        with col3:
+            time_interval = st.selectbox(
+                "Time Interval",
+                ["1m", "5m", "1d", "1w", "1mo"],
+            )
+        with col4:
+            chart_type = st.selectbox("Chart Type", ["Candlestick", "Line"])
+        with col5:
+            indicators = st.multiselect(
+                "Indicators",
+                ["SMA_50", "EMA_20", "RSI", "MACD"],
+                max_selections=3,
+            )
+
+    if symbol and st.session_state.plot_type == "normal":
+        if st.session_state.fsa.is_valid_stock(symbol):
+
+            chart = plot_chart(
+                symbol=symbol,
+                period=time_period,
+                interval=time_interval,
+                plot_type="normal",
+                chart_type=chart_type,
+                indicators=indicators,
+            )
+
+            st.markdown(f"### Stock Chart for {symbol}")
+            st.plotly_chart(
+                chart,
+                use_container_width=True,
+            )
+        else:
+            st.toast(f"Stock ticker symbol {symbol} is not valid")
+        st.session_state.plot_type = "none"
+
+    elif symbol and st.session_state.plot_type == "prediction":
+        if symbol.split(".") in st.session_state.training_stocks:
+            chart = plot_chart(symbol=symbol, plot_type="prediction")
+
+            st.markdown(f"### Predicted Stock Movement for {symbol}")
+            st.plotly_chart(chart, use_container_width=True)
+        else:
+            st.toast(f"Stock ticker symbol {symbol} not found in trained stocks")
+        st.session_state.plot_type = "none"
+
+    else:
+        st.markdown("### Stock Chart with Indicators & Predictions")
+        st.area_chart()
+
+    with st.container():
+        with st_horizontal():
+            if st.button("Plot", icon="📈"):
+                st.session_state.plot_type = "normal"
+                st.rerun()
+
+            if st.button("Predict", icon="🔮", disabled=True):
+                trained_stocks = st.session_state.get("training_stocks", [])
+                if not symbol in trained_stocks:
+                    st.toast("One or more selected stocks are not trained!", icon="⚠️")
+
+                st.session_state.plot_type = "prediction"
+            if st.button("Reset", icon="❌"):
+                reset_selections()
+            if st.button("Refresh", icon="🔃"):
+                st.cache_data.clear()
