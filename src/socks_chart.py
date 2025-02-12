@@ -9,6 +9,13 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+# Page config
+st.set_page_config(
+    page_title="SocksAI",
+    page_icon=":socks:",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 @st.cache_data(ttl=datetime.timedelta(days=1), max_entries=100)
 def plot_chart(

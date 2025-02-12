@@ -1,5 +1,13 @@
 import streamlit as st
 
+# Page config
+st.set_page_config(
+    page_title="SocksAI",
+    page_icon=":socks:",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
 st.title("SocksAI Home")
 
 navigation, details = st.columns([1, 2])

@@ -1,5 +1,12 @@
 import streamlit as st
-from streamlit_components import st_horizontal
+
+# Page config
+st.set_page_config(
+    page_title="SocksAI",
+    page_icon=":socks:",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 @st.dialog("Quick Analysis")
 def quick_analysis():

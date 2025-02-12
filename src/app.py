@@ -16,13 +16,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-# Page config
-st.set_page_config(
-    page_title="SocksAI",
-    page_icon=":socks:",
-    layout="wide",
-    # initial_sidebar_state="collapsed",
-)
 
 st.logo("assests/socksai.png")
 
