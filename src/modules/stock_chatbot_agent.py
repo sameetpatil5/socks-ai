@@ -1,8 +1,6 @@
 import os
 import shutil
 import logging
-from typing import Optional
-from rich.prompt import Prompt
 from pymongo import MongoClient
 from qdrant_client import QdrantClient
 from dotenv import load_dotenv
@@ -276,8 +274,11 @@ class StockChatbotAgent:
             logging.error(f"Error initializing Agent: {e}")
             return
 
-    def chat():
-        pass
+    def chat(self, prompt):
+        response = self.chat_agent.run(prompt, stream=True)
+
+        for chunk in response:
+            yield chunk.content + ""
 
     def add_knowledge(self, path_or_url: str, source_type: str = "website"):
         """Adds a document to the appropriate knowledge base."""
@@ -310,18 +311,3 @@ class StockChatbotAgent:
 
         except Exception as e:
             logging.error(f"Error adding document to knowledge base: {e}")
-
-
-if __name__ == "__main__":
-    # Define MongoDB and Qdrant credentials
-    storage_db_uri = os.environ.get("MONGO_URI")
-    storage_db_name = os.environ.get("MONGO_DB")
-    qdrant_url = os.environ.get("QDRANT_URL")
-    api_key = os.environ.get("QDRANT_API_KEY")
-
-    if not all([storage_db_uri, storage_db_name, qdrant_url, api_key]):
-        logging.error("Missing required environment variables.")
-        exit(1)
-
-    chatbot = StockChatbotAgent(storage_db_uri, storage_db_name, qdrant_url, api_key)
-    chatbot.socksai_agent()

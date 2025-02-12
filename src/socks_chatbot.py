@@ -50,14 +50,7 @@ if prompt := st.chat_input("Talk to SocksAI"):
     st.session_state["messages"].append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        # response_holder = st.empty()
-        # full_response = ""
-        response = scba.chat(prompt)
-        # for chunk in response:
-        #     full_response += chunk or ""
-        #     response_holder.markdown(full_response + "▌")
-
-        # response_holder.markdown(full_response)
+        response = st.session_state.scba.chat(prompt)
         full_response = st.write_stream(response)
 
     st.session_state["messages"].append({"role": "assistant", "content": full_response})
