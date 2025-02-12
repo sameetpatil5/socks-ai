@@ -7,7 +7,7 @@ navigation, details = st.columns([1, 2])
 with navigation.container(border=True):
     st.subheader("Navigation")
     st.page_link("socks_home.py", label="Socks Home", icon="🏠")
-    st.page_link("socksai_chatbot.py", label="SocksAI Chatbot", icon="🤖")
+    st.page_link("socks_chatbot.py", label="SocksAI Chatbot", icon="🤖")
     st.page_link("socks_chart.py", label="Socks Chart", icon="📈")
     st.page_link("daily_socks.py", label="Daily Socks", icon="📊")
 

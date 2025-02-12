@@ -28,7 +28,7 @@ st.logo("assests/socksai.png")
 
 pages = [
     st.Page("socks_home.py", title="Home"),
-    st.Page("socksai_chatbot.py", title="SocksAI Chatbot"),
+    st.Page("socks_chatbot.py", title="SocksAI Chatbot"),
     st.Page("socks_chart.py", title="Charts & Indicators"),
     st.Page("daily_socks.py", title="Daily Socks"),
 ]
