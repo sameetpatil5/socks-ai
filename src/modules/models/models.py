@@ -41,23 +41,7 @@ class StockModel(BaseModel):
     performance: str = Field(..., description="The performance metrics of the stock.")
 
 
-class AnalystModel(BaseModel):
-    symbol: str = Field(..., description="The stock ticker symbol.")
-    closing_price: Price = Field(
-        ..., description="The closing price of the stock with currency."
-    )
-    analyst_insights: str = Field(
-        ..., description="The analyst recommendations of the stock."
-    )
-    performance: str = Field(..., description="The performance metrics of the stock.")
-    sentiment_score: int = Field(..., description="Sentiment score (1-10).")
-    sentiment_statement: str = Field(
-        ...,
-        description="Overall summary for the stock for the day along with the sentiment.",
-    )
-
-
-class TeamModel(BaseModel):
+class QuickAnalysisModel(BaseModel):
     symbol: str = Field(..., description="The stock ticker symbol.")
     price: Price = Field(
         ..., description="The current price of the stock with currency."

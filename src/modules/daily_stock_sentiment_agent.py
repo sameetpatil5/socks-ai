@@ -10,9 +10,7 @@ from phi.tools.yfinance import YFinanceTools
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from rich.pretty import pprint
-
-from .models.models import NewsModel, StockModel, AnalystModel, TeamModel
+from .models.models import QuickAnalysisModel
 
 # Configure logging
 logging.basicConfig(
@@ -165,7 +163,7 @@ class DailyStockSentimentAgent:
             name="Team of Agents",
             role="Provide a concise summary of the provided stock",
             description="This Agent will combine the expertise of all agents to provide a cohesive, well-supported response.",
-            response_model=TeamModel,
+            response_model=QuickAnalysisModel,
             model=Gemini(id="gemini-2.0-flash-exp"),
             tools=[
                 YFinanceTools(
