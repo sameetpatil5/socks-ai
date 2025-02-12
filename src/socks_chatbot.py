@@ -1,6 +1,4 @@
 import streamlit as st
-from modules.stock_chatbot_agent import StockChatbotAgent
-import os
 
 # Page config
 st.set_page_config(
@@ -10,26 +8,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# if "scba" not in st.session_state:
-#     st.session_state.scba = StockChatbotAgent(
-#         storage_db_uri=os.environ.get("MONGO_URI"),
-#         storage_db_name=os.environ.get("MONGO_DB"),
-#         qdrant_url=os.environ.get("QDRANT_URL"),
-#         api_key=os.environ.get("QDRANT_API_KEY"),
-#         session_id="temp",
-#         run_id="new",
-#         user_id="user"
-#     )
-
-scba = StockChatbotAgent(
-    storage_db_uri=os.environ.get("MONGO_URI"),
-    storage_db_name=os.environ.get("MONGO_DB"),
-    qdrant_url=os.environ.get("QDRANT_URL"),
-    api_key=os.environ.get("QDRANT_API_KEY"),
-    session_id="temp",
-    run_id="new",
-    user_id="user",
-)
 
 st.title("SocksAI Chatbot")
 

@@ -1,17 +1,25 @@
-import streamlit as st
+import os
 import logging
-from dotenv import load_dotenv
 import requests
+import datetime as dt
+import streamlit as st
+from dotenv import load_dotenv
+
 from pymongo import MongoClient
+from pymongo.errors import InvalidURI
 from qdrant_client import QdrantClient
 from qdrant_client.http import exceptions as qdrant_exceptions
-from pymongo.errors import InvalidURI
+
+from modules.find_stock_agent import FindStockAgent
+from modules.daily_stock_sentiment_agent import DailyStockSentimentAgent
+from modules.stock_chart_agent import StockChartAgent
+from modules.stock_chatbot_agent import StockChatbotAgent
+
 
 load_dotenv()
 
 # Configure Logging
 logging.basicConfig(
-    # filename="socksai.log",  # Log file name
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
@@ -72,6 +80,44 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# Initialize stock lists in session state
+if "fsa" not in st.session_state:
+    st.session_state.fsa = FindStockAgent()
+
+if "dssa" not in st.session_state:
+    st.session_state.dssa = DailyStockSentimentAgent(
+        os.environ.get("MONGO_URI"), os.environ.get("MONGO_DB")
+    )
+
+if "sca" not in st.session_state:
+    st.session_state.sca = StockChartAgent()
+
+if "scba" not in st.session_state:
+    st.session_state.scba = StockChatbotAgent(
+        storage_db_uri=os.environ.get("MONGO_URI"),
+        storage_db_name=os.environ.get("MONGO_DB"),
+        qdrant_url=os.environ.get("QDRANT_URL"),
+        api_key=os.environ.get("QDRANT_API_KEY"),
+        session_id="temp",
+        run_id="new",
+        user_id="user"
+    )
+
+if "daily_stocks" not in st.session_state:
+    st.session_state.daily_stocks = st.session_state.dssa.stocks
+
+if "training_stocks" not in st.session_state:
+    st.session_state.training_stocks = []
+
+if "found_stocks" not in st.session_state:
+    st.session_state.found_stocks = []
+
+if "added_stocks" not in st.session_state:
+    st.session_state.added_stocks = []
+
+if "plot_type" not in st.session_state:
+    st.session_state.plot_type = "none"
 
 
 # Sidebar Header
