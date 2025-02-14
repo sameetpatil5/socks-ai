@@ -132,7 +132,7 @@ class StockChatbotAgent:
                     "Fetch and summarize relevant company news.",
                     "Assist with stock market research by analyzing fundamentals and financial metrics.",
                 ],
-                model=Gemini(id="gemini-2.0-flash-exp"),
+                model=Gemini(id="gemini-1.5-flash"),
                 tools=[
                     YFinanceTools(
                         stock_price=True,
@@ -157,7 +157,7 @@ class StockChatbotAgent:
                     "Provide summaries of relevant news impacting stocks or sectors.",
                     "Highlight potential risks and opportunities based on news trends.",
                 ],
-                model=Gemini(id="gemini-2.0-flash-exp"),
+                model=Gemini(id="gemini-1.5-flash"),
                 tools=[GoogleSearch()],
                 tool_choice="auto",
             )
@@ -172,7 +172,7 @@ class StockChatbotAgent:
                     "Identify market sentiment based on content analysis.",
                     "Provide concise takeaways from lengthy financial documents.",
                 ],
-                model=Gemini(id="gemini-2.0-flash-exp"),
+                model=Gemini(id="gemini-1.5-flash"),
                 tools=[
                     Crawl4aiTools(),
                     WebsiteTools(knowledge_base=website_knowledge_base),
@@ -190,7 +190,7 @@ class StockChatbotAgent:
                     "Overlay multiple stock charts for comparison.",
                     "Provide insights based on visualized data trends.",
                 ],
-                model=Gemini(id="gemini-2.0-flash-exp"),
+                model=Gemini(id="gemini-1.5-flash"),
                 tools=[
                     PythonTools(),
                     PandasTools(),
@@ -244,10 +244,10 @@ class StockChatbotAgent:
                         model=Gemini(id="gemini-1.5-flash"),
                     ),
                     classifier=MemoryClassifier(
-                        model=Gemini(id="gemini-2.0-flash-exp"),
+                        model=Gemini(id="gemini-1.5-flash"),
                     ),
                     summarizer=MemorySummarizer(
-                        model=Gemini(id="gemini-2.0-flash-exp"),
+                        model=Gemini(id="gemini-1.5-flash"),
                     ),
                     create_user_memories=True,
                     update_user_memories_after_run=True,
@@ -260,7 +260,7 @@ class StockChatbotAgent:
                     self.finance_agnet,
                     self.search_agent,
                     self.web_agent,
-                    self.chart_agent,
+                    # self.chart_agent,
                 ],
                 add_chat_history_to_messages=True,
                 num_history_responses=10,
@@ -268,7 +268,7 @@ class StockChatbotAgent:
                 add_context=True,
                 markdown=True,
             )
-            # agent.knowledge.load(recreate=False)
+            self.chat_agent.knowledge.load(recreate=False)
             logging.info("Stock Chatbot Agent initialized successfully.")
         except Exception as e:
             logging.error(f"Error initializing Agent: {e}")
@@ -279,6 +279,7 @@ class StockChatbotAgent:
 
         for chunk in response:
             yield chunk.content + ""
+
 
     def add_knowledge(self, path_or_url: str, source_type: str = "website"):
         """Adds a document to the appropriate knowledge base."""
