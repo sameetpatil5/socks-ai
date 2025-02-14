@@ -286,9 +286,13 @@ class DailyStockSchedulerAgent:
         """
         Start the agents and scheduler.
         """
-        self.schedule_tasks()
-        self.scheduler.start()
-        logging.info("Agents and scheduler started.")
+        if not self.scheduler.running:
+            self.schedule_tasks()
+            self.scheduler.start()
+            logging.info("Agents and scheduler started.")
+        else:
+            logging.info("Scheduler is already running.")
+
 
     def stop_agents(self) -> None:
         """
