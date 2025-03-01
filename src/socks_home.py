@@ -1,4 +1,8 @@
 import streamlit as st
+import logging
+
+# Configure logging
+logger = logging.getLogger("app")
 
 # Page config
 st.set_page_config(
@@ -30,7 +34,9 @@ with navigation.container(border=True):
 
 with navigation.container(border=True):
     st.subheader("Support")
-    st.link_button("Buy Me a Coffee", "", icon="☕️", disabled=True)
+    st.link_button(
+        label="Buy Me a Coffee", url="https://buymeacoffee.com/sameetpatil5", icon="☕️"
+    )
 
 
 with details.container(border=True):
@@ -42,27 +48,23 @@ with details.container(border=True):
 
         **SocksAI** is a powerful stock trading assistant designed to help traders conduct research, analyze market trends, and make informed decisions—all in one place.  
 
-        Developed and maintained by [Sameet Patil](https://www.github.com/sameetpatil5), SocksAI is built using the **PhiData/Ango Agentic Framework** to provide intelligent insights and enhance trading efficiency.  
+        Developed and maintained by [Sameet Patil](https://www.github.com/sameetpatil5), SocksAI is built using the **Ango/PhiData Agentic Framework** to provide intelligent insights and enhance trading efficiency.  
 
         #### Features  
         - 🤖 **Chatbot** - Get stock-related insights and perform expert analysis using large language models (LLMs).  
-        - 📈 **Stock Charts & Indicators** - Visualize stock charts with various technical indicators.  
+        - 📈 **Stock Charts & Indicators** - Visualize stock charts with various technical indicators and Analyze the Plotted charts.  
         - 📊 **Daily Stock Insights** - Track market trends and get daily updates on your watchlisted stocks.  
-        - 🗨️ **Train Models for Stock Prediction** - Develop and use AI models to predict stock trends.  
 
         #### What You Can Do with SocksAI  
         ✅ **Interact with the chatbot** to get expert stock market analysis and insights.  
-        ✅ **Analyze stock charts** directly in the app, using a variety of technical indicators.  
+        ✅ **Analyze stock charts** with AI directly in the app, using a variety of technical indicators.  
         ✅ **Watchlist stocks** and receive **daily stock insights** to stay ahead of the market.  
-        ✅ **Train AI models** for specific stocks and get predictive analytics on future trends.  
-        ✅ **View stock predictions** directly within the stock charts interface.  
 
         SocksAI simplifies stock market analysis, making trading more data-driven and efficient. 🚀  
         """
         )
 
     with how_to:
-        # st.subheader("How to Use")
         st.markdown(
             """
         ### How to Use SocksAI  
@@ -78,22 +80,19 @@ with details.container(border=True):
         - OpenAI API Key
         These keys are required to make the app work at your end rather than mine. Also none of these keys are stored in the app.  
 
+        > You can add these keys in the `.env` file when hosting locally or in the UI sidebar. 
+
         #### Step 2: Explore Features  
         Once inside, you can:  
         - **Chat with the AI Assistant** - Ask stock-related questions and get insights powered by AI.  
         - **Analyze Stock Charts** - Select a stock and visualize real-time charts with multiple indicators.  
         - **Get Daily Insights** - Track market trends and receive insights on your watchlisted stocks.  
-        - **Train Prediction Models** - Select a stock, train a model, and generate AI-driven forecasts.  
 
         #### Step 3: Watchlist & Alerts  
         - Add stocks to your **watchlist** to track their performance over time.  
         - Get **daily insights** and alerts on your watchlisted stocks.  
 
-        #### Step 4: Train AI Models for Stock Predictions  
-        - Choose a stock, configure model parameters, and train an AI model to predict price movements.  
-        - View **predictions directly on stock charts** to make data-driven decisions.  
-
-        #### Step 5: Stay Updated  
+        #### Step 4: Stay Updated  
         - Regularly check **market insights** and **AI-driven predictions** to refine your trading strategy.  
         - Keep an eye on real-time stock performance through the **SocksAI dashboard**.  
 
@@ -107,7 +106,7 @@ with details.container(border=True):
         ### Privacy Note  
 
 
-        SocksAI is designed to be **privacy-friendly** and respects your data. Since this project was primarily built for exploratory purposes, I have not focused on a full-scale deployment. However, I still wanted to make it available to end users. This is why SocksAI requires you to provide your own API keys. That said, I have ensured that **your API keys, personal information, and trading data are never stored anywhere**.  
+        SocksAI is designed to be **privacy-friendly** and respects your data. Since this project was primarily built for exploratory purposes, I have not focused on a full-scale deployment. However, I still wanted to make it available to end users. This is why SocksAI requires you to provide your own API keys. That said, I have ensured that **your API keys, personal information, and trading data are never stored anywhere** with me.  
 
 
         #### 🔒 How SocksAI Handles Your Data  
@@ -126,3 +125,5 @@ with details.container(border=True):
         I've built SocksAI with a lot of passion and effort, and I'm committed to keeping it safe and secure. I understand the importance of privacy, so you can use it with confidence, knowing that **your information is safe and always under your control**. 🚀  
         """
         )
+
+logger.info("Home page Loaded")
