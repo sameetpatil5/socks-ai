@@ -17,7 +17,7 @@ st.set_page_config(
     page_title="SocksAI",
     page_icon=":socks:",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
@@ -29,6 +29,18 @@ def get_scheduler_status():
             return response.json()
         else:
             return {"error": "Failed to fetch scheduler status."}
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
+
+
+# Function to reload stocks
+def reload_stocks():
+    try:
+        response = requests.post(f"{URL}/reload_stocks")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Failed to reload stocks."}
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
 
@@ -89,7 +101,6 @@ def add_daily_stock():
             st.session_state.added_stocks = []
             if not st.session_state.found_stocks:
                 show_toast("No stocks found. Please try again.")
-                
 
         if st.session_state.found_stocks:
             st.markdown("### Found Stocks:")
@@ -120,6 +131,13 @@ def add_daily_stock():
                 st.session_state.dssa.add_stocks(final_stocks)
                 st.session_state.found_stocks = []
                 st.session_state.added_stocks = []
+
+                # Reload the stocks for the scheduler
+                response = reload_stocks()
+                if response["success"]:
+                    logger.info("Successfully reloaded stocks for the scheduler.")
+                else:
+                    logger.error("Failed to reload stocks for the scheduler.")
                 show_toast("Successfully Added Daily stocks from Database")
                 st.rerun()
 
@@ -165,6 +183,13 @@ def remove_daily_stock():
                 st.session_state.dssa.remove_stocks(st.session_state.added_stocks)
                 st.session_state.found_stocks = []
                 st.session_state.added_stocks = []
+
+                # Reload the stocks for the scheduler
+                response = reload_stocks()
+                if response["success"]:
+                    logger.info("Successfully reloaded stocks for the scheduler.")
+                else:
+                    logger.error("Failed to reload stocks for the scheduler.")
                 show_toast("Successfully Removed Daily stocks from Database")
                 st.rerun()
 
@@ -172,6 +197,7 @@ def remove_daily_stock():
                 st.session_state.added_stocks = st.session_state.found_stocks
     except Exception as e:
         logger.error("Error while removing daily stocks.")
+
 
 # UI Layout
 st.title("Daily Socks & Socks Training")
@@ -193,7 +219,9 @@ with st.container(border=True):
             type="primary",
             disabled=not st.session_state.daily_stocks,
         )
-        st.button("Perform Quick Analysis", on_click=quick_analysis, key="quick_analysis")
+        st.button(
+            "Perform Quick Analysis", on_click=quick_analysis, key="quick_analysis"
+        )
 
 # Daily Stocks Analysis Scheduler Section
 with st.container(border=True):
@@ -203,7 +231,9 @@ with st.container(border=True):
 
     with scheduler_buttons.container(height=scheduler_section_height, border=False):
         if st.button(
-            "Start Daily Socks Scheduler", key="start_daily_socks_scheduler", use_container_width=True
+            "Start Daily Socks Scheduler",
+            key="start_daily_socks_scheduler",
+            use_container_width=True,
         ):
             try:
                 response = requests.post(f"{URL}/start_scheduler")
