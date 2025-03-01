@@ -211,14 +211,15 @@ with st.container(border=True):
                     show_toast("Daily Socks Scheduler started successfully.")
                     st.rerun()
                 else:
-                    show_toast("Failed to start scheduler.", "error")
+                    show_toast("❌ Failed to start scheduler.")
             except requests.exceptions.RequestException as e:
-                show_toast(f"Error: {e}", "error")
+                logger.error(f"Error while starting stock scheduler: {e}")
 
         if st.button(
             "Stop Daily Socks Scheduler",
             key="stop_daily_socks_scheduler",
             use_container_width=True,
+            type="primary",
         ):
             try:
                 response = requests.post(f"{URL}/stop_scheduler")
@@ -226,9 +227,9 @@ with st.container(border=True):
                     show_toast("Daily Socks Scheduler stopped successfully.")
                     st.rerun()
                 else:
-                    show_toast("Failed to stop scheduler.", "error")
+                    show_toast("❌ Failed to stop scheduler.")
             except requests.exceptions.RequestException as e:
-                show_toast(f"Error: {e}", "error")
+                logger.error(f"Error while stopping stock scheduler: {e}")
 
     with scheduler_divider.container(border=False):
         st_vertical_divider(scheduler_section_height)
