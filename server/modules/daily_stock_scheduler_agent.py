@@ -427,7 +427,7 @@ class DailyStockSchedulerAgent:
                 except Exception as e:
                     logger.error(f"Error during end-of-day analysis for {stock}: {e}")
 
-    def schedule_tasks(self) -> None:
+    def schedule_jobs(self) -> None:
         """
         Schedule periodic tasks for fetching stock data and news.
         """
@@ -459,13 +459,13 @@ class DailyStockSchedulerAgent:
         except Exception as e:
             logger.error(f"Error scheduling periodic tasks: {e}")
 
-    def start_agents(self) -> None:
+    def start_scheduler(self) -> None:
         """
-        Start the agents and scheduler.
+        Start the scheduler.
         """
         try:
             if not self.scheduler.running:
-                self.schedule_tasks()
+                self.schedule_jobs()
                 self.scheduler.start()
                 logger.info("Agents and scheduler started.")
             else:
@@ -473,9 +473,9 @@ class DailyStockSchedulerAgent:
         except Exception as e:
             logger.error(f"Error starting agents and scheduler: {e}")
 
-    def stop_agents(self) -> None:
+    def stop_scheduler(self) -> None:
         """
-        Stop the scheduler and agents.
+        Stop the scheduler.
         """
         try:
             self.scheduler.shutdown()

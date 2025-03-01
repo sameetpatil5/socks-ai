@@ -30,7 +30,7 @@ async def start_schedule():
     """
     logger.info("Received request to start the scheduler.")
     try:
-        scheduler_agent.start_agents()
+        scheduler_agent.start_scheduler()
         logger.info("Scheduler started successfully.")
         return {"success": True, "message": "Scheduler started successfully."}
     except Exception as e:
@@ -45,7 +45,7 @@ async def stop_schedule():
     """
     logger.info("Received request to stop the scheduler.")
     try:
-        scheduler_agent.stop_agents()
+        scheduler_agent.stop_scheduler()
         logger.info("Scheduler stopped successfully.")
         return {"success": True, "message": "Scheduler stopped successfully."}
     except Exception as e:
