@@ -80,3 +80,21 @@ async def reload_stocks():
     except Exception as e:
         logger.error(f"Error reloading stocks: {str(e)}")
         raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
+
+@router.post("/toggle_scheduler", tags=["Scheduler"])
+async def toggle_scheduler():
+    """
+    Toggle the stock sentiment analysis scheduler.
+    """
+    logger.info("Received request to toggle the scheduler.")
+    try:
+        status = scheduler_agent.toggle_scheduler()
+        if status != "error":
+            logger.info(f"Scheduler toggled to {status} successfully.")
+            return {"success": True, "message": f"Scheduler toggled to {status} successfully."}
+        else:
+            logger.error("Error toggling scheduler.")
+            raise HTTPException(status_code=500, detail={"success": False, "error": "Error toggling scheduler."})
+    except Exception as e:
+        logger.error(f"Error toggling scheduler: {str(e)}")
+        raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})

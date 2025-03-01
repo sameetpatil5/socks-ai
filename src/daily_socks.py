@@ -44,6 +44,19 @@ def reload_stocks():
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
 
+# Function to toggle scheduler
+def toggle_scheduler():
+    try:
+        response = requests.post(f"{URL}/toggle_scheduler")
+        if response.status_code == 200:
+            status_message = response.json()["message"]
+            show_toast(status_message)
+        else:
+            error_message = response.json()["error"]
+            show_toast(error_message)
+            return {"error": "Failed to toggle scheduler."}
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
 
 @st.dialog("Quick Analysis")
 def quick_analysis():
@@ -260,6 +273,13 @@ with st.container(border=True):
                     show_toast("❌ Failed to stop scheduler.")
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error while stopping stock scheduler: {e}")
+
+
+        st.toggle(
+            "Pause Scheduler",
+            key="pause_scheduler",
+            on_change=toggle_scheduler,
+        )
 
     with scheduler_divider.container(border=False):
         st_vertical_divider(scheduler_section_height)

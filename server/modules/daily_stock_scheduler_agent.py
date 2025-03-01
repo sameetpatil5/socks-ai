@@ -509,6 +509,31 @@ class DailyStockSchedulerAgent:
         except Exception as e:
             logger.error(f"Error pausing scheduler: {e}")
 
+    def toggle_scheduler(self) -> str:
+        """
+        Toggle the current state of the scheduler between paused and resumed.
+
+        Returns:
+            str: A message indicating the new state of the scheduler, either
+            "paused" or "resumed". Returns "error" if an exception occurs.
+        """
+
+        try:
+            if self.scheduler.state == 1:
+                self.pause_scheduler()
+                logger.info("Scheduler toggle paused.")
+                return "paused"
+            elif self.scheduler.state == 2:
+                self.resume_scheduler()
+                logger.info("Scheduler toggle resumed.")
+                return "resumed"
+            else:
+                logger.info("Scheduler is not running. Skipping toggle.")
+                return "error"
+        except Exception as e:
+            logger.error(f"Error toggling scheduler: {e}")
+            return "error"
+
     def get_scheduler_status(self) -> Optional[Dict[str, Dict[bool | str, str]]]:
         """
         Get the scheduler status, including whether jobs are paused and their next run time.
