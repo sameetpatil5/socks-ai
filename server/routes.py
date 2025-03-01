@@ -67,7 +67,7 @@ async def get_scheduler_status():
         logger.error(f"Error getting scheduler status: {str(e)}")
         raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
 
-@router.get("/reload_stocks", tags=["Daily Stocks"])
+@router.post("/reload_stocks", tags=["Daily Stocks"])
 async def reload_stocks():
     """
     Reload the stock list.
