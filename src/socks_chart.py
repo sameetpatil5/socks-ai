@@ -1,13 +1,15 @@
-import streamlit as st
-import yfinance as yf
-from streamlit_components.st_horizontal import st_horizontal
-import datetime
+import datetime as dt
+from typing import Tuple
 import logging
 
+import streamlit as st
+import plotly.graph_objects as go
+
+from streamlit_components.st_horizontal import st_horizontal
+from streamlit_components.st_show_toast import show_toast
+
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logger = logging.getLogger("app")
 
 # Page config
 st.set_page_config(
@@ -17,43 +19,64 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-@st.cache_data(ttl=datetime.timedelta(days=1), max_entries=100)
+
+@st.cache_data(ttl=dt.timedelta(days=1), max_entries=100)
 def plot_chart(
     symbol: str,
-    period: str,
+    period: Tuple[dt.date, dt.date],
     interval: str,
-    plot_type: str,
     chart_type: str,
     indicators: list,
-):
+) -> go.Figure:
     """
-    Generates a stock chart with given parameters.
+    Plots a chart for the given stock symbol with the specified period, interval, chart type, and indicators.
 
     Args:
-        symbol (str): Stock ticker symbol.
-        period (str): Time period for historical data.
-        interval (str): Time interval for stock data.
-        plot_type (str): Type of plot - "normal" for stock chart, "prediction" for forecast.
-        chart_type (str): Chart type - "Candlestick" or "Line".
-        indicators (list): List of indicators to include in the chart.
+        symbol (str): The stock ticker symbol (e.g., "AAPL").
+        period (Tuple[dt.date, dt.date]): The time period for historical data.
+        interval (str): The interval for stock data points (e.g., "1d").
+        chart_type (str): Type of chart - "candlestick" or "line".
+        indicators (list): List of indicators to include in the chart (e.g., ["SMA_20", "EMA_20"]).
 
     Returns:
         go.Figure: A Plotly figure containing the stock chart.
     """
-    logging.info(
-        f"Plotting chart for {symbol} with period={period}, interval={interval}, type={plot_type}"
-    )
-    fig = st.session_state.sca.plot_chart(
-        symbol, period, interval, plot_type, chart_type, indicators
-    )
-    return fig
+    try:
+        logger.info(
+            f"Plotting chart for {symbol} with period={period}, interval={interval}"
+        )
+        fig = st.session_state.sca.plot_chart(
+            symbol, period, interval, chart_type, indicators
+        )
+        show_toast(f"Plotted the Chart for {symbol}")
+        return fig
+    except Exception as e:
+        logger.error(
+            f"Error while plotting chart for {symbol} with period={period}, interval={interval}: {e}"
+        )
+        return go.Figure()
+
+
+def both_interval_selected(time_period):
+    """
+    Checks if the given time_period is a tuple of two dates.
+
+    Args:
+        time_period (tuple or other): The time period to check.
+
+    Returns:
+        bool: True if the time period is a tuple of two dates, False otherwise.
+    """
+    if isinstance(time_period, tuple) and len(time_period) == 2 and all(isinstance(d, dt.date) for d in time_period):
+        return True
+    return False
 
 
 def reset_selections():
     """
     Resets all user selections and reloads the page.
     """
-    logging.info("Resetting user selections.")
+    logger.info("Resetting user selections.")
     for key in [
         "chart_symbol",
         "chart_time_period",
@@ -65,6 +88,26 @@ def reset_selections():
             del st.session_state[key]
     st.rerun()
 
+
+@st.dialog("Stock Chart Analysis")
+def analyze_chart(chart: go.Figure):
+    """
+    Analyzes the stock chart and returns a summary.
+
+    Args:
+        chart (go.Figure): The plotted stock chart to be analyzed. 
+    """
+    st.html("<span class='big-dialog'></span>")
+
+    try:
+        logger.info(f"Analysing Stock Chart...")
+        response = st.session_state.sca.analyze_plot(chart)
+
+        with st.spinner("Reading Chart"):
+            st.write_stream(response)
+        logger.info("Loaded the AI response from Chart Agent")
+    except:
+        logger.error("Error while Analysing Stock Chart")
 
 # Page Title
 st.title("Socks Chart")
@@ -81,10 +124,10 @@ with st.container(border=True):
                 "Stock Symbol", placeholder="Stock ticker symbol", key="chart_symbol"
             ).upper()
         with col2:
-            time_period = st.selectbox(
-                "Time Frame",
-                ["1d", "1w", "1mo", "3mo", "6mo", "1y", "5y"],
-                index=0,
+            time_period = st.date_input(
+                "Time Period",
+                value=(dt.date.today() - dt.timedelta(days=1), dt.date.today()),
+                max_value=dt.date.today(),
                 key="chart_time_period",
             )
         with col3:
@@ -101,32 +144,28 @@ with st.container(border=True):
         with col5:
             indicators = st.multiselect(
                 "Indicators",
-                ["SMA_50", "EMA_20", "RSI", "MACD"],
-                max_selections=2,
+                ["SMA_20", "EMA_20", "BB_20", "VWAP"],
+                default=["SMA_20", "EMA_20"],
                 key="chart_indicators",
             )
 
     # Chart Rendering Logic
-    if symbol and st.session_state.plot_type == "normal":
-        logging.info(f"Generating normal stock chart for {symbol}.")
-        chart = plot_chart(
-            symbol=symbol,
-            period=time_period,
-            interval=time_interval,
-            plot_type="normal",
-            chart_type=chart_type,
-            indicators=indicators,
-        )
-        st.markdown(f"### Stock Chart for {symbol}")
-        st.plotly_chart(chart, use_container_width=True)
-        st.session_state.plot_type = "none"
+    if symbol:
+        logger.info(f"Generating normal stock chart for {symbol}.")
 
-    elif symbol and st.session_state.plot_type == "prediction":
-        logging.info(f"Generating predicted stock movement chart for {symbol}.")
-        chart = plot_chart(symbol=symbol, plot_type="prediction")
-        st.markdown(f"### Predicted Stock Movement for {symbol}")
-        st.plotly_chart(chart, use_container_width=True)
-        st.session_state.plot_type = "none"
+        if both_interval_selected(time_period):
+            chart = plot_chart(
+                symbol=symbol,
+                period=time_period,
+                interval=time_interval,
+                chart_type=chart_type,
+                indicators=indicators,
+            )
+            st.markdown(f"### Stock Chart for {symbol}")
+            fig = st.plotly_chart(chart, use_container_width=True)
+        else:
+            st.markdown(f"### Stock Chart for {symbol}")
+            st.area_chart()
 
     else:
         st.markdown("### Stock Chart with Indicators & Predictions")
@@ -137,37 +176,24 @@ with st.container(border=True):
         with st_horizontal():
             if st.button("Plot", icon="📈"):
                 if st.session_state.fsa.is_valid_stock(symbol):
-                    logging.info(
+                    logger.info(
                         f"Valid stock symbol detected: {symbol}. Proceeding to plot."
                     )
-                    st.session_state.plot_type = "normal"
                     st.rerun()
                 else:
-                    logging.error(
+                    logger.error(
                         f"Stock ticker symbol {symbol} was not found. {symbol} is either invalid or missing exchange identifiers."
                     )
-                    st.toast(f"Stock ticker symbol {symbol} is not valid!", icon="⚠️")
+                    show_toast(f"⚠️ Stock ticker symbol {symbol} is not valid!")
 
-            if st.button(
-                "Predict", icon="🔮", disabled=True, help="Under Construction"
-            ):
-                trained_stocks = st.session_state.get("training_stocks", [])
-                if symbol.split(".") in st.session_state.trained_stocks:
-                    logging.info(
-                        f"Stock {symbol} found in trained stocks. Plotting prediction."
-                    )
-                    st.session_state.plot_type = "prediction"
-                    st.rerun()
-                else:
-                    logging.error(
-                        f"Stock ticker symbol {symbol} is not trained! Train {symbol} in Daily Stock Page first!"
-                    )
-                    st.toast(f"Stock ticker symbol {symbol} is not trained!", icon="⚠️")
+            if st.button("Analyze", icon="🔍"):
+                analyze_chart(chart)
 
             if st.button("Reset", icon="❌"):
                 reset_selections()
 
-            if st.button("Refresh", icon="🔃"):
-                logging.info("Clearing cache and refreshing page.")
+            if st.button("Refresh", icon="🔃", help="Clears all the cache data and performs a refresh"):
+                logger.info("Clearing cache and refreshing page.")
                 st.cache_data.clear()
+                show_toast("Cleared the Streamlit Cache Data!")
                 st.rerun()
