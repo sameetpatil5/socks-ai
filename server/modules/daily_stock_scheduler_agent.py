@@ -256,42 +256,48 @@ class DailyStockSchedulerAgent:
             "%Y-%m-%d"
         )
 
-        for stock in self.stocks:
-            try:
-                logger.info(f"Fetching stock data for {stock}...")
-                data = self.stock_agent.run(
-                    f"Retrieve the latest financial data for the stock ticker {stock}."
-                )
+        if self.is_trading_day():
+            logger.info("Today is not a trading day. Skipping stock data fetching.")
+            self.pause_scheduler()
+            return
+        else:
+            self.resume_scheduler()
+            for stock in self.stocks:
                 try:
-                    stock_entry = {
-                        "timestamp": dt.datetime.now(dt.timezone.utc),
-                        "contents": data.content.dict(),
-                    }
-
-                    logger.info(f"Storing data for {stock}...")
-
-                    stock_data = self.db.get_collection("stock-data")
-
-                    result = stock_data.update_one(
-                        {"stock_symbol": stock, "date": today},
-                        {"$push": {"data": stock_entry}},
-                        upsert=True,
+                    logger.info(f"Fetching stock data for {stock}...")
+                    data = self.stock_agent.run(
+                        f"Retrieve the latest financial data for the stock ticker {stock}."
                     )
+                    try:
+                        stock_entry = {
+                            "timestamp": dt.datetime.now(dt.timezone.utc),
+                            "contents": data.content.dict(),
+                        }
 
-                    if result.matched_count > 0:
-                        logger.info(f"Updated existing document for {stock} Data on {today}.")
-                    else:
-                        logger.info(
-                            f"Created new document for {stock} Data on {today}."
+                        logger.info(f"Storing data for {stock}...")
+
+                        stock_data = self.db.get_collection("stock-data")
+
+                        result = stock_data.update_one(
+                            {"stock_symbol": stock, "date": today},
+                            {"$push": {"data": stock_entry}},
+                            upsert=True,
                         )
+
+                        if result.matched_count > 0:
+                            logger.info(f"Updated existing document for {stock} Data on {today}.")
+                        else:
+                            logger.info(
+                                f"Created new document for {stock} Data on {today}."
+                            )
+                    except Exception as e:
+                        logger.error(f"Error storing stock data for {stock}: {e}")
+                except ResourceExhausted as e:
+                    logger.warning(
+                        f"ResourceExhausted error while fetching stock data for {stock}: {e}"
+                    )
                 except Exception as e:
-                    logger.error(f"Error storing stock data for {stock}: {e}")
-            except ResourceExhausted as e:
-                logger.warning(
-                    f"ResourceExhausted error while fetching stock data for {stock}: {e}"
-                )
-            except Exception as e:
-                logger.error(f"Error fetching stock data for {stock}: {e}")
+                    logger.error(f"Error fetching stock data for {stock}: {e}")
 
     def fetch_stock_news(self):
         """
@@ -303,44 +309,50 @@ class DailyStockSchedulerAgent:
 
         today = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
 
-        for stock in self.stocks:
-            try:
-                logger.info(f"Fetching news for {stock}...")
-                news = self.news_agent.run(
-                    f"Retrieve the latest news articles for {stock}."
-                )
+        if not self.is_trading_day():
+            logger.info("Today is not a trading day. Skipping news fetching.")
+            self.pause_scheduler()
+            return
+        else:
+            self.resume_scheduler()
+            for stock in self.stocks:
                 try:
-                    news_entry = {
-                        "timestamp": dt.datetime.now(dt.timezone.utc),
-                        "contents": news.content.dict(),
-                    }
-
-                    logger.info(f"Storing news for {stock}...")
-
-                    stock_news = self.db.get_collection("stock-news")
-
-                    result = stock_news.update_one(
-                        {"stock_symbol": stock, "date": today},
-                        {"$push": {"data": news_entry}},
-                        upsert=True,
+                    logger.info(f"Fetching news for {stock}...")
+                    news = self.news_agent.run(
+                        f"Retrieve the latest news articles for {stock}."
                     )
+                    try:
+                        news_entry = {
+                            "timestamp": dt.datetime.now(dt.timezone.utc),
+                            "contents": news.content.dict(),
+                        }
 
-                    if result.matched_count > 0:
-                        logger.info(
-                            f"Updated existing document for {stock} News on {today}."
+                        logger.info(f"Storing news for {stock}...")
+
+                        stock_news = self.db.get_collection("stock-news")
+
+                        result = stock_news.update_one(
+                            {"stock_symbol": stock, "date": today},
+                            {"$push": {"data": news_entry}},
+                            upsert=True,
                         )
-                    else:
-                        logger.info(
-                            f"Created new document for {stock} News on {today}."
-                        )
+
+                        if result.matched_count > 0:
+                            logger.info(
+                                f"Updated existing document for {stock} News on {today}."
+                            )
+                        else:
+                            logger.info(
+                                f"Created new document for {stock} News on {today}."
+                            )
+                    except Exception as e:
+                        logger.error(f"Error storing news for {stock}: {e}")
+                except ResourceExhausted as e:
+                    logger.warning(
+                        f"ResourceExhausted error while fetching news for {stock}: {e}"
+                    )
                 except Exception as e:
-                    logger.error(f"Error storing news for {stock}: {e}")
-            except ResourceExhausted as e:
-                logger.warning(
-                    f"ResourceExhausted error while fetching news for {stock}: {e}"
-                )
-            except Exception as e:
-                logger.error(f"Error fetching news for {stock}: {e}")
+                    logger.error(f"Error fetching news for {stock}: {e}")
 
     def email_report(self, report: str):
         """
@@ -363,82 +375,87 @@ class DailyStockSchedulerAgent:
 
         today = dt.datetime.now(dt.timezone.utc)
 
-        for stock in self.stocks:
-            # Fetch today's financial data and news
-            try:
-                # Fetch today's financial data document
-                stock_doc = self.db.stock_data.find_one({"stock_symbol": stock, "date": today})
-                if stock_doc:
-                    financial_data = stock_doc.get("data", [])  # Extract stored periodic data
-                else:
-                    financial_data = []
+        if not self.is_trading_day():
+            logger.info("Today is not a trading day. Skipping end-of-day analysis.")
+            self.pause_scheduler()
+            return
+        else:
+            self.resume_scheduler()
+            for stock in self.stocks:
+                # Fetch today's financial data and news
+                try:
+                    # Fetch today's financial data document
+                    stock_doc = self.db.stock_data.find_one({"stock_symbol": stock, "date": today})
+                    if stock_doc:
+                        financial_data = stock_doc.get("data", [])  # Extract stored periodic data
+                    else:
+                        financial_data = []
 
-                # Fetch today's stock news document
-                news_doc = self.db.stock_news.find_one({"stock_symbol": stock, "date": today})
-                if news_doc:
-                    news_data = news_doc.get("data", [])  # Extract stored news articles
-                else:
-                    news_data = []
-            except Exception as e:
-                logger.error(f"Error fetching data for {stock} from MongoDB: {e}")
-                continue
+                    # Fetch today's stock news document
+                    news_doc = self.db.stock_news.find_one({"stock_symbol": stock, "date": today})
+                    if news_doc:
+                        news_data = news_doc.get("data", [])  # Extract stored news articles
+                    else:
+                        news_data = []
+                except Exception as e:
+                    logger.error(f"Error fetching data for {stock} from MongoDB: {e}")
+                    continue
 
-            # Perform analysis
-            try:
-                analysis = self.daily_stock_analyst_agent.run(
-                    f"Perform analysis for stock {stock} with financial data {financial_data} and news data {news_data}."
-                )
+                # Perform analysis
+                try:
+                    analysis = self.daily_stock_analyst_agent.run(
+                        f"Perform analysis for stock {stock} with financial data {financial_data} and news data {news_data}."
+                    )
 
-                self.db.daily_sentiment.update_one(
-                    {"stock_symbol": stock, "date": today},  
-                    {
-                        "$set": {
-                            "stock_symbol": stock,
-                            "date": today,
-                            "analysis": analysis,
-                            "last_updated": dt.datetime.now(dt.timezone.utc),
-                        }
-                    },
-                    upsert=True,
-                )
-                logger.info(f"End-of-day analysis for {stock} stored successfully.")
-            except ResourceExhausted as e:
-                logger.warning(
-                    f"ResourceExhausted error during end-of-day analysis for {stock}: {e}"
-                )
-            except Exception as e:
-                logger.error(f"Error during end-of-day analysis for {stock}: {e}")
+                    self.db.daily_sentiment.update_one(
+                        {"stock_symbol": stock, "date": today},  
+                        {
+                            "$set": {
+                                "stock_symbol": stock,
+                                "date": today,
+                                "analysis": analysis,
+                                "last_updated": dt.datetime.now(dt.timezone.utc),
+                            }
+                        },
+                        upsert=True,
+                    )
+                    logger.info(f"End-of-day analysis for {stock} stored successfully.")
+                except ResourceExhausted as e:
+                    logger.warning(
+                        f"ResourceExhausted error during end-of-day analysis for {stock}: {e}"
+                    )
+                except Exception as e:
+                    logger.error(f"Error during end-of-day analysis for {stock}: {e}")
 
     def schedule_tasks(self) -> None:
         """
         Schedule periodic tasks for fetching stock data and news.
         """
         try:
-            if self.is_trading_day():
-                # Fetch stock data every 5 minutes during trading hours
-                self.scheduler.add_job(
-                    self.fetch_stock_data,
-                    trigger=CronTrigger(
-                        day_of_week="mon-fri", hour="9-15", minute="*/5"
-                    ),
-                    id="fetch_stock_data",
-                    replace_existing=True,
-                )
-                # Fetch stock news at the start of every hour during trading hours
-                self.scheduler.add_job(
-                    self.fetch_stock_news,
-                    trigger=CronTrigger(day_of_week="mon-fri", hour="9-15", minute="0"),
-                    id="fetch_stock_news",
-                    replace_existing=True,
-                )
-                # Perform end-of-day analysis at 16:00 (4:00 PM) after market close
-                self.scheduler.add_job(
-                    self.perform_end_of_day_analysis,
-                    trigger=CronTrigger(day_of_week="mon-fri", hour="16", minute="0"),
-                    id="perform_end_of_day_analysis",
-                    replace_existing=True,
-                )
-                logger.info("Scheduled periodic tasks.")
+            # Fetch stock data every 5 minutes during trading hours
+            self.scheduler.add_job(
+                self.fetch_stock_data,
+                trigger=CronTrigger(
+                    day_of_week="mon-fri", hour="9-15", minute="*/5"
+                ),
+                id="fetch_stock_data",
+                replace_existing=True,
+            )
+            # Fetch stock news at the start of every hour during trading hours
+            self.scheduler.add_job(
+                self.fetch_stock_news,
+                trigger=CronTrigger(day_of_week="mon-fri", hour="9-15", minute="0"),
+                id="fetch_stock_news",
+                replace_existing=True,
+            )
+            # Perform end-of-day analysis at 16:00 (4:00 PM) after market close
+            self.scheduler.add_job(
+                self.perform_end_of_day_analysis,
+                trigger=CronTrigger(day_of_week="mon-fri", hour="16", minute="0"),
+                id="perform_end_of_day_analysis",
+                replace_existing=True,
+            )
+            logger.info("Scheduled periodic tasks.")
         except Exception as e:
             logger.error(f"Error scheduling periodic tasks: {e}")
 
@@ -465,6 +482,32 @@ class DailyStockSchedulerAgent:
             logger.info("Scheduler stopped.")
         except Exception as e:
             logger.error(f"Error stopping scheduler: {e}")
+
+    def resume_scheduler(self) -> None:
+        """
+        Restart the scheduler and agents.
+        """
+        try:
+            if self.scheduler.state == 2:
+                self.scheduler.resume()
+                logger.info("Scheduler resumed.")
+            else:
+                logger.info("Scheduler is not paused. Skipping resume.")
+        except Exception as e:
+            logger.error(f"Error resuming scheduler: {e}")
+    
+    def pause_scheduler(self) -> None:
+        """
+        Pause the scheduler and agents.
+        """
+        try:
+            if self.scheduler.state == 1:
+                self.scheduler.pause()
+                logger.info("Scheduler paused.")
+            else:
+                logger.info("Scheduler is not running. Skipping pause.")
+        except Exception as e:
+            logger.error(f"Error pausing scheduler: {e}")
 
     def get_scheduler_status(self) -> Optional[Dict[str, Dict[bool | str, str]]]:
         """
