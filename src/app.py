@@ -260,3 +260,8 @@ st.sidebar.write(
 
 st.sidebar.button("Clear Keys", on_click=clear_environment_keys)
 st.sidebar.divider()
+
+if st.session_state.show_toast:
+    st.toast(st.session_state.toast_message)
+    st.session_state.show_toast = False
+    st.session_state.toast_message = ""
