@@ -238,6 +238,12 @@ class DailyStockSchedulerAgent:
         except Exception as e:
             logger.error(f"Error while loading Daily Stocks from MongoDB: {e}")
 
+    def reload_stocks(self):
+        """
+        Reload stock symbols from MongoDB.
+        """
+        self.load_stocks()
+
     def fetch_stock_data(self):
         """
         Fetch and store financial data for all tracked stocks.

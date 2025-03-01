@@ -66,3 +66,17 @@ async def get_scheduler_status():
     except Exception as e:
         logger.error(f"Error getting scheduler status: {str(e)}")
         raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
+
+@router.get("/reload_stocks", tags=["Daily Stocks"])
+async def reload_stocks():
+    """
+    Reload the stock list.
+    """
+    logger.info("Received request to reload stocks.")
+    try:
+        scheduler_agent.reload_stocks()
+        logger.info("Stocks reloaded successfully.")
+        return {"success": True, "message": "Stocks reloaded successfully."}
+    except Exception as e:
+        logger.error(f"Error reloading stocks: {str(e)}")
+        raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
