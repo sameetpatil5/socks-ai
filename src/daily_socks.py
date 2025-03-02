@@ -2,13 +2,10 @@ import requests
 import logging
 
 import streamlit as st
-from streamlit_toggle import st_toggle_switch
 
 from streamlit_components.st_horizontal import st_horizontal
 from streamlit_components.st_show_toast import show_toast
 from streamlit_components.st_vertical_divider import st_vertical_divider
-
-URL = "http://localhost:8000"
 
 # Configure logging
 logger = logging.getLogger("app")
@@ -25,7 +22,7 @@ st.set_page_config(
 # Function to fetch scheduler status
 def get_scheduler_status():
     try:
-        response = requests.get(f"{URL}/scheduler_status")
+        response = requests.get(f"{st.session_state.server_url}/scheduler_status")
         if response.status_code == 200:
             return response.json()
         else:
@@ -37,7 +34,7 @@ def get_scheduler_status():
 # Function to reload stocks
 def reload_stocks():
     try:
-        response = requests.post(f"{URL}/reload_stocks")
+        response = requests.post(f"{st.session_state.server_url}/reload_stocks")
         if response.status_code == 200:
             return response.json()
         else:
@@ -48,7 +45,7 @@ def reload_stocks():
 # Function to toggle scheduler
 def toggle_scheduler():
     try:
-        response = requests.post(f"{URL}/toggle_scheduler")
+        response = requests.post(f"{st.session_state.server_url}/toggle_scheduler")
         if response.status_code == 200:
             status_message = response.json()["message"]
             show_toast(status_message)
@@ -66,7 +63,7 @@ def scheduler_state() -> int:
         2: "Paused",
     }
     try:
-        response = requests.get(f"{URL}/scheduler_state")
+        response = requests.get(f"{st.session_state.server_url}/scheduler_state")
         if response.status_code == 200:
             if response.json()["success"] == True:
                 state = response.json()["state"]
@@ -270,7 +267,7 @@ with st.container(border=True):
             use_container_width=True,
         ):
             try:
-                response = requests.post(f"{URL}/start_scheduler")
+                response = requests.post(f"{st.session_state.server_url}/start_scheduler")
                 if response.status_code == 200:
                     show_toast("Daily Socks Scheduler started successfully.")
                     st.rerun()
@@ -286,7 +283,7 @@ with st.container(border=True):
             type="primary",
         ):
             try:
-                response = requests.post(f"{URL}/stop_scheduler")
+                response = requests.post(f"{st.session_state.server_url}/stop_scheduler")
                 if response.status_code == 200:
                     show_toast("Daily Socks Scheduler stopped successfully.")
                     st.rerun()
@@ -301,7 +298,7 @@ with st.container(border=True):
             use_container_width=True,
         ):
             try:
-                response = requests.post(f"{URL}/refresh_scheduler")
+                response = requests.post(f"{st.session_state.server_url}/refresh_scheduler")
                 if response.status_code == 200:
                     logger.info("Scheduler refreshed successfully.")
                     st.session_state["pause_scheduler"] = False

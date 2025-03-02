@@ -63,6 +63,7 @@ ENVIRONMENT_KEYS = {
     "mongodb_cluster_url": "MONGO_URI",
     "qdrant_url": "QDRANT_URL",
     "qdrant_api_key": "QDRANT_API_KEY",
+    "server_url": "SERVER_URL",
 }
 
 # App logo
@@ -151,7 +152,6 @@ def validate_gemini_api_key(api_key):
             return False
     except Exception as e:
         logger.error(f"Gemini API Key validation error: {masked_key} - {str(e)}")
-        st.warning(f"Gemini API Key Error: {str(e)}")
         return False
 
 
@@ -170,7 +170,6 @@ def validate_mongodb_url(cluster_url):
         return False
     except Exception as e:
         logger.error(f"MongoDB Connection Error: {masked_url} - {str(e)}")
-        st.warning(f"MongoDB Error: {str(e)}")
         return False
 
 
@@ -200,9 +199,24 @@ def validate_qdrant_url(qdrant_url, api_key):
         logger.error(
             f"Qdrant Connection Error: {masked_url} | API Key: {masked_key} - {str(e)}"
         )
-        st.warning(f"Qdrant API Key Error: {str(e)}")
         return False
 
+# Function to validate Server URL
+def validate_server_url(server_url):
+    masked_url = mask_key(server_url)
+    try:
+        response = requests.get(f"{server_url}/")
+        if response.status_code == 200 and response.json()["success"] == True:
+            logger.info(f"Server URL validation successful: {masked_url}")
+            show_toast(f"Server URL validation successful: {masked_url}")
+            return True
+        else:
+            logger.warning(f"Invalid Server URL: {masked_url}")
+            show_toast("⚠️ Invalid Server URL")
+            return False
+    except Exception as e:
+        logger.error(f"Server Connection Error: {masked_url} - {str(e)}")
+        return False
 
 # Validation before storing the keys
 def check_gemini_api_key():
@@ -233,6 +247,14 @@ def check_qdrant_url_api_key():
         st.sidebar.error("❌ Invalid Qdrant URL or API Key!")
 
 
+def check_server_url():
+    server_url = st.session_state.get("input_server_url", "")
+
+    if validate_server_url(server_url):
+        st.session_state["server_url"] = server_url
+    else:
+        st.sidebar.error("❌ Invalid Server URL!")
+
 # Get the environment keys when running the app for the first time
 @st.dialog("Enter Environment Keys")
 def add_env_keys():
@@ -261,6 +283,9 @@ def add_env_keys():
             type="password",
             value=st.session_state.get("qdrant_api_key", ""),
         )
+        form_server_url = st.text_input(
+            "Server URL", type="password", value=st.session_state.get("server_url", "")
+        )
 
         confirm = st.form_submit_button("Confirm", icon="✔️")
 
@@ -269,6 +294,7 @@ def add_env_keys():
                 validate_gemini_api_key(form_gemini_api_key)
                 and validate_mongodb_url(form_mongodb_cluster_url)
                 and validate_qdrant_url(form_qdrant_url, form_qdrant_api_key)
+                and validate_server_url(form_server_url)
             )
 
             if is_validated:
@@ -276,6 +302,7 @@ def add_env_keys():
                 st.session_state["mongodb_cluster_url"] = form_mongodb_cluster_url
                 st.session_state["qdrant_url"] = form_qdrant_url
                 st.session_state["qdrant_api_key"] = form_qdrant_api_key
+                st.session_state["server_url"] = form_server_url
                 st.session_state["keys_provided"] = True
                 show_toast("Environment Keys successfully loaded")
                 st.rerun()
@@ -351,6 +378,13 @@ qdrant_api_key = st.sidebar.text_input(
     type="password",
     on_change=check_qdrant_url_api_key,
     key="input_qdrant_api_key",
+)
+server_url = st.sidebar.text_input(
+    "Server URL",
+    value=get_persistent_value("server_url"),
+    type="password",
+    on_change=check_server_url,
+    key="input_server_url",
 )
 
 st.sidebar.write(
