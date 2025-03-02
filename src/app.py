@@ -201,6 +201,7 @@ def validate_qdrant_url(qdrant_url, api_key):
         )
         return False
 
+
 # Function to validate Server URL
 def validate_server_url(server_url):
     masked_url = mask_key(server_url)
@@ -217,6 +218,7 @@ def validate_server_url(server_url):
     except Exception as e:
         logger.error(f"Server Connection Error: {masked_url} - {str(e)}")
         return False
+
 
 # Validation before storing the keys
 def check_gemini_api_key():
@@ -255,36 +257,45 @@ def check_server_url():
     else:
         st.sidebar.error("❌ Invalid Server URL!")
 
+
 # Get the environment keys when running the app for the first time
-@st.dialog("Enter Environment Keys")
+@st.dialog("Enter YOUR Environment Keys")
 def add_env_keys():
 
-    st.write("API Keys are required to make the app work at your end rather than mine.")
-    st.write("You can add these keys in the `.env` file when hosting locally or in the UI sidebar.")
-    st.write("Please add your environment keys to access the SocksAI platform.")
+    st.write(
+        """API Keys are required to make the app work at your end rather than mine.  \
+                You can add these keys in the `.env` file when hosting locally or in the UI sidebar."""
+    )
 
     with st.form("env_keys_form"):
+        st.subheader("Please add your environment keys to access the SocksAI platform.")
+        st.write("Fields marked with ':red[*]' are required.")
         form_gemini_api_key = st.text_input(
-            "Gemini API Key",
+            "Gemini API Key:red[*]",
             type="password",
             value=st.session_state.get("gemini_api_key", ""),
         )
         form_mongodb_cluster_url = st.text_input(
-            "MongoDB Cluster URL",
+            "MongoDB Cluster URL:red[*]",
             type="password",
             value=st.session_state.get("mongodb_cluster_url", ""),
             help="Format: mongodb+srv://<username>:<password>@<database>/?retryWrites=true&w=majority&appName=<app-name>",
         )
         form_qdrant_url = st.text_input(
-            "Qdrant URL", type="password", value=st.session_state.get("qdrant_url", "")
+            "Qdrant URL:red[*]",
+            type="password",
+            value=st.session_state.get("qdrant_url", ""),
         )
         form_qdrant_api_key = st.text_input(
-            "Qdrant API Key",
+            "Qdrant API Key:red[*]",
             type="password",
             value=st.session_state.get("qdrant_api_key", ""),
         )
         form_server_url = st.text_input(
-            "Server URL", type="password", value=st.session_state.get("server_url", "")
+            "Server URL",
+            type="password",
+            value=st.session_state.get("server_url", ""),
+            help="Optional, But required to use the Scheduler for Daily Stocks",
         )
 
         confirm = st.form_submit_button("Confirm", icon="✔️")
@@ -294,7 +305,7 @@ def add_env_keys():
                 validate_gemini_api_key(form_gemini_api_key)
                 and validate_mongodb_url(form_mongodb_cluster_url)
                 and validate_qdrant_url(form_qdrant_url, form_qdrant_api_key)
-                and validate_server_url(form_server_url)
+                and (validate_server_url(form_server_url) if form_server_url else True)
             )
 
             if is_validated:
@@ -351,14 +362,14 @@ st.sidebar.header("Environment Keys")
 
 # Input fields for API keys with password masking
 gemini_api_key = st.sidebar.text_input(
-    "Gemini API Key",
+    "Gemini API Key:red[*]",
     value=get_persistent_value("gemini_api_key"),
     type="password",
     on_change=check_gemini_api_key,
     key="input_gemini_api_key",
 )
 mongodb_cluster_url = st.sidebar.text_input(
-    "MongoDB Cluster URL",
+    "MongoDB Cluster URL:red[*]",
     value=get_persistent_value("mongodb_cluster_url"),
     type="password",
     help="Make sure to add your IP address to MongoDB's IP whitelist.",
@@ -366,14 +377,14 @@ mongodb_cluster_url = st.sidebar.text_input(
     key="input_mongodb_cluster_url",
 )
 qdrant_url = st.sidebar.text_input(
-    "Qdrant URL",
+    "Qdrant URL:red[*]",
     value=get_persistent_value("qdrant_url"),
     type="password",
     on_change=check_qdrant_url_api_key,
     key="input_qdrant_url",
 )
 qdrant_api_key = st.sidebar.text_input(
-    "Qdrant API Key",
+    "Qdrant API Key:red[*]",
     value=get_persistent_value("qdrant_api_key"),
     type="password",
     on_change=check_qdrant_url_api_key,
@@ -383,6 +394,7 @@ server_url = st.sidebar.text_input(
     "Server URL",
     value=get_persistent_value("server_url"),
     type="password",
+    help="Your Server URL where you have deployed the Scheduler.",
     on_change=check_server_url,
     key="input_server_url",
 )
@@ -410,7 +422,9 @@ with st_horizontal():
 st.sidebar.divider()
 
 if not st.session_state.get("keys_provided", False):
-    provided_keys = [st.session_state[key] for key in ENVIRONMENT_KEYS.keys()]
+    provided_keys = [
+        st.session_state[key] for key in ENVIRONMENT_KEYS.keys() if key != "server_url"
+    ]
 
     if any(key == "" for key in provided_keys):
         add_env_keys()
@@ -420,9 +434,9 @@ if not st.session_state.get("keys_provided", False):
 else:
     # Initialize Agents in session state
     if (
-        "fsa" not in st.session_state 
-        or "dssa" not in st.session_state 
-        or "sca" not in st.session_state 
+        "fsa" not in st.session_state
+        or "dssa" not in st.session_state
+        or "sca" not in st.session_state
         or "scba" not in st.session_state
     ):
         logger.info("Agents Loaded")
