@@ -2,6 +2,7 @@ import requests
 import logging
 
 import streamlit as st
+from streamlit_toggle import st_toggle_switch
 
 from streamlit_components.st_horizontal import st_horizontal
 from streamlit_components.st_show_toast import show_toast
@@ -274,6 +275,23 @@ with st.container(border=True):
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error while stopping stock scheduler: {e}")
 
+        if st.button(
+            "Refresh Scheduler",
+            key="refresh_scheduler",
+            use_container_width=True,
+        ):
+            try:
+                response = requests.post(f"{URL}/refresh_scheduler")
+                if response.status_code == 200:
+                    logger.info("Scheduler refreshed successfully.")
+                    st.session_state["pause_scheduler"] = False
+                    show_toast("Daily Socks Scheduler refreshed successfully.")
+                    st.rerun()
+                else:
+                    logger.error("Failed to refresh scheduler.")
+                    show_toast("❌ Failed to refresh scheduler.")
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error while refreshing stock scheduler: {e}")
 
         st.toggle(
             "Pause Scheduler",

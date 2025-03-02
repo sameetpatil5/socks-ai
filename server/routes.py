@@ -67,6 +67,7 @@ async def get_scheduler_status():
         logger.error(f"Error getting scheduler status: {str(e)}")
         raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
 
+
 @router.post("/reload_stocks", tags=["Daily Stocks"])
 async def reload_stocks():
     """
@@ -80,6 +81,7 @@ async def reload_stocks():
     except Exception as e:
         logger.error(f"Error reloading stocks: {str(e)}")
         raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
+
 
 @router.post("/toggle_scheduler", tags=["Scheduler"])
 async def toggle_scheduler():
@@ -97,4 +99,19 @@ async def toggle_scheduler():
             raise HTTPException(status_code=500, detail={"success": False, "error": "Error toggling scheduler."})
     except Exception as e:
         logger.error(f"Error toggling scheduler: {str(e)}")
+        raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
+    
+
+@router.post("/refresh_scheduler", tags=["Scheduler"])
+async def refresh_scheduler():
+    """
+    Refresh the stock sentiment analysis scheduler.
+    """
+    logger.info("Received request to refresh the scheduler.")
+    try:
+        scheduler_agent.refresh_scheduler()
+        logger.info("Scheduler refreshed successfully.")
+        return {"success": True, "message": "Scheduler refreshed successfully."}
+    except Exception as e:
+        logger.error(f"Error refreshing scheduler: {str(e)}")
         raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})

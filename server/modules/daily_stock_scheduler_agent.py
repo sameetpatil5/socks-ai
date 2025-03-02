@@ -534,6 +534,17 @@ class DailyStockSchedulerAgent:
             logger.error(f"Error toggling scheduler: {e}")
             return "error"
 
+    def refresh_scheduler(self) -> None:
+        """
+        Refresh the scheduler by stopping and restarting it.
+        """
+        try:
+            self.stop_scheduler()
+            self.start_scheduler()
+            logger.info("Scheduler refreshed.")
+        except Exception as e:
+            logger.error(f"Error refreshing scheduler: {e}")
+
     def get_scheduler_status(self) -> Optional[Dict[str, Dict[bool | str, str]]]:
         """
         Get the scheduler status, including whether jobs are paused and their next run time.
