@@ -1,11 +1,14 @@
+import ast
 import logging
+from typing import List
+
 import yfinance as yf
+
 from phi.agent import Agent
 from phi.model.google import Gemini
 from phi.tools.googlesearch import GoogleSearch
 from phi.tools.yfinance import YFinanceTools
-from typing import List
-import ast
+
 from .models.models import StockSymbol
 
 # Configure logging

@@ -1,6 +1,6 @@
+import logging
 import datetime as dt
 from typing import Tuple
-import logging
 
 import streamlit as st
 import plotly.graph_objects as go
