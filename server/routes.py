@@ -18,6 +18,7 @@ async def home():
     """
     logger.info("Home route accessed")
     return {
+        "success": True,
         "message": "Welcome to SocksAI!",
         "status": "SocksAI server is running!",
     }
