@@ -427,16 +427,24 @@ else:
         st.session_state.daily_stocks = st.session_state.dssa.stocks
 
     if "chatbot_interactions" not in st.session_state:
-        st.session_state["chatbot_interactions"] = []
+        st.session_state.chatbot_interactions = []
 
     # Helper Data
-    if "found_stocks" not in st.session_state or "added_stocks" not in st.session_state:
+    if (
+        "found_stocks" not in st.session_state
+        or "added_stocks" not in st.session_state
+        or "scheduler_state" not in st.session_state
+    ):
         logger.info("Helper Data Loaded")
+
     if "found_stocks" not in st.session_state:
         st.session_state.found_stocks = []
 
     if "added_stocks" not in st.session_state:
         st.session_state.added_stocks = []
+
+    if "scheduler_state" not in st.session_state:
+        st.session_state.scheduler_state = 0
 
 
 # Helper Functions

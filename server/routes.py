@@ -115,3 +115,17 @@ async def refresh_scheduler():
     except Exception as e:
         logger.error(f"Error refreshing scheduler: {str(e)}")
         raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})
+    
+@router.get("/scheduler_state", tags=["Scheduler"])
+async def get_scheduler_state():
+    """
+    Get the current state of the stock sentiment analysis scheduler.
+    """
+    logger.info("Received request to get scheduler state.")
+    try:
+        state = scheduler_agent.get_scheduler_state()
+        logger.info(f"Scheduler State: {state}")
+        return {"success": True, "state": state}
+    except Exception as e:
+        logger.error(f"Error getting scheduler state: {str(e)}")
+        raise HTTPException(status_code=500, detail={"success": False, "error": str(e)})

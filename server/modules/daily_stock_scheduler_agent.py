@@ -495,7 +495,7 @@ class DailyStockSchedulerAgent:
                 logger.info("Scheduler is not paused. Skipping resume.")
         except Exception as e:
             logger.error(f"Error resuming scheduler: {e}")
-    
+
     def pause_scheduler(self) -> None:
         """
         Pause the scheduler and agents.
@@ -520,11 +520,11 @@ class DailyStockSchedulerAgent:
 
         try:
             if self.scheduler.state == 1:
-                self.pause_scheduler()
+                self.scheduler.pause()
                 logger.info("Scheduler toggle paused.")
                 return "paused"
             elif self.scheduler.state == 2:
-                self.resume_scheduler()
+                self.scheduler.resume()
                 logger.info("Scheduler toggle resumed.")
                 return "resumed"
             else:
@@ -544,6 +544,15 @@ class DailyStockSchedulerAgent:
             logger.info("Scheduler refreshed.")
         except Exception as e:
             logger.error(f"Error refreshing scheduler: {e}")
+
+    def get_scheduler_state(self) -> int:
+        """
+        Get the current state of the scheduler.
+
+        Returns:
+            int: The state of the scheduler, either 0 (stopped) or 1 (running) or 2 (paused).
+        """
+        return self.scheduler.state
 
     def get_scheduler_status(self) -> Optional[Dict[str, Dict[bool | str, str]]]:
         """

@@ -59,6 +59,26 @@ def toggle_scheduler():
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
 
+def scheduler_state() -> int:
+    STATE = {
+        0: "Stopped",
+        1: "Running",
+        2: "Paused",
+    }
+    try:
+        response = requests.get(f"{URL}/scheduler_state")
+        if response.status_code == 200:
+            if response.json()["success"] == True:
+                state = response.json()["state"]
+                show_toast(f"Scheduler is currently in {STATE[state]} state")
+                return state
+            else:
+                return 0
+        else:
+            return 0
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
+
 @st.dialog("Quick Analysis")
 def quick_analysis():
     """
@@ -297,6 +317,7 @@ with st.container(border=True):
             "Pause Scheduler",
             key="pause_scheduler",
             on_change=toggle_scheduler,
+            disabled=scheduler_state() == 0,
         )
 
     with scheduler_divider.container(border=False):
