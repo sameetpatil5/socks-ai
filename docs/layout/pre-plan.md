@@ -48,7 +48,7 @@
 
 #### **Dashboard UI**
 
-![SocksAI Dashboard UI/ Interface](/assests/socksai_dashboard.png)
+![SocksAI Dashboard UI/ Interface](/assets/socksai_dashboard.png)
 
 #### **Dashboard Features**
 
@@ -111,5 +111,3 @@
 
 7. **Periodic Stock Analysis and Emailing**:
    - [YouTube Tutorial](https://www.youtube.com/watch?v=DDvdMEEaLTE)
-
----
