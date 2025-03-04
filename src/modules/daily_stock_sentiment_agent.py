@@ -136,6 +136,8 @@ class DailyStockSentimentAgent:
             else:
                 logger.info(f"Stocks '{stock_symbols}' were already present")
 
+            self.load_stocks()
+
         except Exception as e:
             logger.error(f"Error while adding stocks to MongoDB: {e}")
 
@@ -162,6 +164,8 @@ class DailyStockSentimentAgent:
                 logger.info(
                     f"No stocks removed (symbols may not have existed): {stock_symbols}"
                 )
+
+            self.load_stocks()
 
         except Exception as e:
             logger.error(f"Error while removing stocks from MongoDB: {e}")
