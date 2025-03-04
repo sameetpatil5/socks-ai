@@ -2,7 +2,7 @@ import os
 import logging
 import holidays
 import datetime as dt
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 from pymongo import MongoClient
 from google.api_core.exceptions import ResourceExhausted
@@ -560,7 +560,18 @@ class DailyStockSchedulerAgent:
         """
         return self.scheduler.state
 
-    def get_scheduler_status(self) -> Optional[Dict[str, Dict[bool | str, str]]]:
+    def get_scheduler_status(self) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves the current status of the scheduler, including its state
+        and details of scheduled jobs.
+
+        Returns:
+            Optional[Dict[str, Any]]: 
+                - If successful, returns a dictionary with:
+                    - "State" (int): The current scheduler state.
+                    - "Jobs" (Dict[str, str]): A mapping of job names to their next run time or "Job not found".
+                - If an error occurs, returns None.
+        """
         try:
             status = {}
 
