@@ -6,6 +6,7 @@ import streamlit as st
 from streamlit_components.st_horizontal import st_horizontal
 from streamlit_components.st_show_toast import show_toast
 from streamlit_components.st_vertical_divider import st_vertical_divider
+from streamlit_components.st_wide_dialog import st_wide_dialog
 
 # Configure logging
 logger = logging.getLogger("app")
@@ -188,7 +189,7 @@ def quick_analysis():
     Perform a quick analysis for all monitored stocks.
     """
 
-    st.html("<span class='big-dialog'></span>")
+    st_wide_dialog()
 
     if not st.session_state.dssa.stocks:
         show_toast("No stocks to Analyze")

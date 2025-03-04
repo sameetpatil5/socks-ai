@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 
 from streamlit_components.st_horizontal import st_horizontal
 from streamlit_components.st_show_toast import show_toast
+from streamlit_components.st_wide_dialog import st_wide_dialog
 
 # Configure logging
 logger = logging.getLogger("app")
@@ -97,7 +98,8 @@ def analyze_chart(chart: go.Figure):
     Args:
         chart (go.Figure): The plotted stock chart to be analyzed. 
     """
-    st.html("<span class='big-dialog'></span>")
+
+    st_wide_dialog()
 
     try:
         logger.info(f"Analysing Stock Chart...")
