@@ -42,6 +42,7 @@ def reload_stocks():
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
 
+
 # Function to toggle scheduler
 def toggle_scheduler():
     try:
@@ -55,6 +56,7 @@ def toggle_scheduler():
             return {"error": "Failed to toggle scheduler."}
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
+
 
 def scheduler_state() -> int:
     STATE = {
@@ -75,6 +77,7 @@ def scheduler_state() -> int:
             return 0
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
+
 
 @st.dialog("Quick Analysis")
 def quick_analysis():
@@ -135,18 +138,17 @@ def add_daily_stock():
 
         if st.session_state.found_stocks:
             st.markdown("### Found Stocks:")
-            with st_horizontal():
-                for stock in st.session_state.found_stocks:
-                    is_selected = stock in st.session_state.added_stocks
-                    btn_label = f"✅ {stock}" if is_selected else stock
-
-                    if st.button(btn_label, key=f"add_daily_{stock}"):
-                        if is_selected:
-                            st.session_state.added_stocks.remove(stock)
-                        else:
-                            st.session_state.added_stocks.append(stock)
-
-            st.write("Click a stock to add/remove it. Use 'Select All' to choose all.")
+            stocks_to_add = st.pills(
+                label="Add Daily Stocks",
+                options=st.session_state.found_stocks,
+                selection_mode="multi",
+                default=st.session_state.added_stocks,
+                format_func=lambda x: "✅ " + x,
+                key="add_daily_stocks_pills",
+                on_change=None,
+                label_visibility="collapsed",
+            )
+            st.write("Click a stock to add/remove it. Double Click `Select All` to choose all.")
     except Exception as e:
         logger.error(f"Error while loading dialog to add daily stocks: {e}")
 
@@ -155,7 +157,7 @@ def add_daily_stock():
             if st.button("Confirm & Add", key="confirm_daily_stocks"):
                 final_stocks = [
                     stock
-                    for stock in st.session_state.added_stocks
+                    for stock in stocks_to_add
                     if stock not in st.session_state.daily_stocks
                 ]
                 st.session_state.daily_stocks.extend(final_stocks)
@@ -163,14 +165,17 @@ def add_daily_stock():
                 st.session_state.found_stocks = []
                 st.session_state.added_stocks = []
 
-                # Reload the stocks for the scheduler
-                response = reload_stocks()
-                if response["success"]:
-                    logger.info("Successfully reloaded stocks for the scheduler.")
+                if st.session_state.server_url == "":
+                    logger.warning("Server URL is not set. Daily stocks will not reloaded.")
                 else:
-                    logger.error("Failed to reload stocks for the scheduler.")
-                show_toast("Successfully Added Daily stocks from Database")
-                st.rerun()
+                    # Reload the stocks for the scheduler
+                    response = reload_stocks()
+                    if response["success"]:
+                        logger.info("Successfully reloaded stocks for the scheduler.")
+                    else:
+                        logger.error("Failed to reload stocks for the scheduler.")
+                    show_toast("Successfully Added Daily stocks from Database")
+                    st.rerun()
 
             if st.button("Select All", key="select_all_daily_stocks"):
                 st.session_state.added_stocks = st.session_state.found_stocks
@@ -188,18 +193,17 @@ def remove_daily_stock():
         st.session_state.found_stocks = st.session_state.daily_stocks
 
         if st.session_state.found_stocks:
-            with st_horizontal():
-                for stock in st.session_state.found_stocks:
-                    is_selected = stock in st.session_state.added_stocks
-                    btn_label = f"❌ {stock}" if is_selected else stock
-
-                    if st.button(btn_label, key=f"remove_daily_{stock}"):
-                        if is_selected:
-                            st.session_state.added_stocks.remove(stock)
-                        else:
-                            st.session_state.added_stocks.append(stock)
-
-            st.write("Click a stock to add/remove it. Use 'Select All' to choose all.")
+            stocks_to_remove = st.pills(
+                label="Remove Daily Stocks",
+                options=st.session_state.found_stocks,
+                selection_mode="multi",
+                default=st.session_state.added_stocks,
+                format_func=lambda x: "❌ " + x,
+                key="remove_daily_stocks_pills",
+                on_change=None,
+                label_visibility="collapsed",
+            )
+            st.write("Click a stock to add/remove it. Double Click `Select All` to choose all.")
     except Exception as e:
         logger.error(f"Error while loading dialog to remove daily stocks: {e}")
 
@@ -209,20 +213,23 @@ def remove_daily_stock():
                 st.session_state.daily_stocks = [
                     stock
                     for stock in st.session_state.daily_stocks
-                    if stock not in st.session_state.added_stocks
+                    if stock not in stocks_to_remove
                 ]
-                st.session_state.dssa.remove_stocks(st.session_state.added_stocks)
+                st.session_state.dssa.remove_stocks(stocks_to_remove)
                 st.session_state.found_stocks = []
                 st.session_state.added_stocks = []
 
-                # Reload the stocks for the scheduler
-                response = reload_stocks()
-                if response["success"]:
-                    logger.info("Successfully reloaded stocks for the scheduler.")
+                if st.session_state.server_url == "":
+                    logger.warning("Server URL is not set. Daily stocks will not reloaded.")
                 else:
-                    logger.error("Failed to reload stocks for the scheduler.")
-                show_toast("Successfully Removed Daily stocks from Database")
-                st.rerun()
+                    # Reload the stocks for the scheduler
+                    response = reload_stocks()
+                    if response["success"]:
+                        logger.info("Successfully reloaded stocks for the scheduler.")
+                    else:
+                        logger.error("Failed to reload stocks for the scheduler.")
+                    show_toast("Successfully Removed Daily stocks from Database")
+                    st.rerun()
 
             if st.button("Select All", key="select_all_daily_stocks"):
                 st.session_state.added_stocks = st.session_state.found_stocks
@@ -260,7 +267,8 @@ with st.container(border=True):
     st.markdown("### Daily Stocks Analysis Scheduler")
     if st.session_state.server_url == "":
         st.warning(
-            "You are not connected to a server. Please provide the server URL in the sidebar to use the scheduler.", icon="⚠️"
+            "You are not connected to a server. Please provide the server URL in the sidebar to use the scheduler.",
+            icon="⚠️",
         )
     else:
         scheduler_buttons, scheduler_divider, scheduler_status = st.columns([1, 0.1, 3])
@@ -272,7 +280,9 @@ with st.container(border=True):
                 use_container_width=True,
             ):
                 try:
-                    response = requests.post(f"{st.session_state.server_url}/start_scheduler")
+                    response = requests.post(
+                        f"{st.session_state.server_url}/start_scheduler"
+                    )
                     if response.status_code == 200:
                         show_toast("Daily Socks Scheduler started successfully.")
                         st.rerun()
@@ -288,7 +298,9 @@ with st.container(border=True):
                 type="primary",
             ):
                 try:
-                    response = requests.post(f"{st.session_state.server_url}/stop_scheduler")
+                    response = requests.post(
+                        f"{st.session_state.server_url}/stop_scheduler"
+                    )
                     if response.status_code == 200:
                         show_toast("Daily Socks Scheduler stopped successfully.")
                         st.rerun()
@@ -303,7 +315,9 @@ with st.container(border=True):
                 use_container_width=True,
             ):
                 try:
-                    response = requests.post(f"{st.session_state.server_url}/refresh_scheduler")
+                    response = requests.post(
+                        f"{st.session_state.server_url}/refresh_scheduler"
+                    )
                     if response.status_code == 200:
                         logger.info("Scheduler refreshed successfully.")
                         st.session_state["pause_scheduler"] = False
@@ -332,7 +346,9 @@ with st.container(border=True):
                 st.error(scheduler_status["error"])
             else:
                 jobs = scheduler_status["status"]  # Dictionary containing job statuses
-                all_stopped = all(jobs[job]["Paused"] == "Job not found" for job in jobs)
+                all_stopped = all(
+                    jobs[job]["Paused"] == "Job not found" for job in jobs
+                )
                 all_running = all(jobs[job]["Paused"] == False for job in jobs)
 
                 if all_stopped:
@@ -349,4 +365,6 @@ with st.container(border=True):
                             if paused == "Job not found" or paused == True:
                                 st.error(f"❌ **{job}** - **Stopped**")
                             else:
-                                st.success(f"✅ **{job}** - Running | Next Run: {next_run}")
+                                st.success(
+                                    f"✅ **{job}** - Running | Next Run: {next_run}"
+                                )
