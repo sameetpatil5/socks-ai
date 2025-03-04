@@ -252,9 +252,7 @@ class DailyStockSchedulerAgent:
         if self.is_daily_stocks_empty("fetch_stock_data"):
             return
 
-        today = dt.datetime.now(dt.timezone.utc).strftime(
-            "%Y-%m-%d"
-        )
+        today = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
 
         if self.is_trading_day():
             logger.info("Today is not a trading day. Skipping stock data fetching.")
@@ -285,7 +283,9 @@ class DailyStockSchedulerAgent:
                         )
 
                         if result.matched_count > 0:
-                            logger.info(f"Updated existing document for {stock} Data on {today}.")
+                            logger.info(
+                                f"Updated existing document for {stock} Data on {today}."
+                            )
                         else:
                             logger.info(
                                 f"Created new document for {stock} Data on {today}."
@@ -385,16 +385,24 @@ class DailyStockSchedulerAgent:
                 # Fetch today's financial data and news
                 try:
                     # Fetch today's financial data document
-                    stock_doc = self.db.stock_data.find_one({"stock_symbol": stock, "date": today})
+                    stock_doc = self.db.stock_data.find_one(
+                        {"stock_symbol": stock, "date": today}
+                    )
                     if stock_doc:
-                        financial_data = stock_doc.get("data", [])  # Extract stored periodic data
+                        financial_data = stock_doc.get(
+                            "data", []
+                        )  # Extract stored periodic data
                     else:
                         financial_data = []
 
                     # Fetch today's stock news document
-                    news_doc = self.db.stock_news.find_one({"stock_symbol": stock, "date": today})
+                    news_doc = self.db.stock_news.find_one(
+                        {"stock_symbol": stock, "date": today}
+                    )
                     if news_doc:
-                        news_data = news_doc.get("data", [])  # Extract stored news articles
+                        news_data = news_doc.get(
+                            "data", []
+                        )  # Extract stored news articles
                     else:
                         news_data = []
                 except Exception as e:
@@ -408,7 +416,7 @@ class DailyStockSchedulerAgent:
                     )
 
                     self.db.daily_sentiment.update_one(
-                        {"stock_symbol": stock, "date": today},  
+                        {"stock_symbol": stock, "date": today},
                         {
                             "$set": {
                                 "stock_symbol": stock,
@@ -435,9 +443,7 @@ class DailyStockSchedulerAgent:
             # Fetch stock data every 5 minutes during trading hours
             self.scheduler.add_job(
                 self.fetch_stock_data,
-                trigger=CronTrigger(
-                    day_of_week="mon-fri", hour="9-15", minute="*/5"
-                ),
+                trigger=CronTrigger(day_of_week="mon-fri", hour="9-15", minute="*/5"),
                 id="fetch_stock_data",
                 replace_existing=True,
             )
@@ -555,15 +561,6 @@ class DailyStockSchedulerAgent:
         return self.scheduler.state
 
     def get_scheduler_status(self) -> Optional[Dict[str, Dict[bool | str, str]]]:
-        """
-        Get the scheduler status, including whether jobs are paused and their next run time.
-
-        Returns:
-            Dict[str, Dict[str, str]]: A dictionary with job statuses, including:
-                - "Paused": True/False if the job is paused.
-                - "Next Run": The next scheduled run time or "Not scheduled".
-            None: If an error occurs.
-        """
         try:
             status = {}
 
@@ -573,23 +570,25 @@ class DailyStockSchedulerAgent:
                 "Perform End-of-Day Analysis": "perform_end_of_day_analysis",
             }
 
-            for job_name, job_id in job_ids.items():
-                job = self.scheduler.get_job(job_id)
-                logger.info(job)
-                if job:
-                    status[job_name] = {
-                        "Paused": not self.scheduler.running,
-                        "Next Run": (
+            scheduler_state = self.get_scheduler_state()
+
+            if scheduler_state == 2 or scheduler_state == 0:
+                status["State"] = scheduler_state
+            elif scheduler_state == 1:
+                status["State"] = scheduler_state
+                status["Jobs"] = {}
+                for job_name, job_id in job_ids.items():
+                    job = self.scheduler.get_job(job_id)
+                    logger.info(job)
+                    if job:
+                        status["Jobs"][job_name] = (
                             job.next_run_time.strftime("%Y-%m-%d %H:%M:%S")
                             if job.next_run_time
                             else "Not scheduled"
-                        ),
-                    }
-                else:
-                    status[job_name] = {
-                        "Paused": "Job not found",
-                        "Next Run": "Job not found",
-                    }
+                        )
+                        
+                    else:
+                        status["Jobs"] = {job_name: "Job not found"}
 
             return status
         except Exception as e:

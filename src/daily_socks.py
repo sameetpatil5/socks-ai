@@ -18,6 +18,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Scheduler state Mapping
+SCHEDULER_STATE = {
+        0: "Stopped",
+        1: "Running",
+        2: "Paused",
+    }
 
 # Function to fetch scheduler status
 def get_scheduler_status():
@@ -59,17 +65,12 @@ def toggle_scheduler():
 
 
 def scheduler_state() -> int:
-    STATE = {
-        0: "Stopped",
-        1: "Running",
-        2: "Paused",
-    }
     try:
         response = requests.get(f"{st.session_state.server_url}/scheduler_state")
         if response.status_code == 200:
             if response.json()["success"] == True:
                 state = response.json()["state"]
-                show_toast(f"Scheduler is currently in {STATE[state]} state")
+                show_toast(f"Scheduler is currently in {SCHEDULER_STATE[state]} state")
                 return state
             else:
                 return 0
@@ -260,113 +261,107 @@ with st.container(border=True):
         )
 
 # Daily Stocks Analysis Scheduler Section
-@st.fragment
-def daily_stocks_scheduler_section():
-    with st.container(border=True):
-        scheduler_section_height = 300
-        st.markdown("### Daily Stocks Analysis Scheduler")
-        if st.session_state.server_url == "":
-            st.warning(
-                "You are not connected to a server. Please provide the server URL in the sidebar to use the scheduler.",
-                icon="⚠️",
-            )
-        else:
-            scheduler_buttons, scheduler_divider, scheduler_status = st.columns([1, 0.1, 3])
+with st.container(border=True):
+    scheduler_section_height = 300
+    st.markdown("### Daily Stocks Analysis Scheduler")
+    if st.session_state.server_url == "":
+        st.warning(
+            "You are not connected to a server. Please provide the server URL in the sidebar to use the scheduler.",
+            icon="⚠️",
+        )
+    else:
+        scheduler_buttons, scheduler_divider, scheduler_status = st.columns([1, 0.1, 3])
 
-            with scheduler_buttons.container(height=scheduler_section_height, border=False):
-                if st.button(
-                    "Start Daily Socks Scheduler",
-                    key="start_daily_socks_scheduler",
-                    use_container_width=True,
-                ):
-                    try:
-                        response = requests.post(
-                            f"{st.session_state.server_url}/start_scheduler"
-                        )
-                        if response.status_code == 200:
-                            show_toast("Daily Socks Scheduler started successfully.")
-                            st.rerun()
-                        else:
-                            show_toast("❌ Failed to start scheduler.")
-                    except requests.exceptions.RequestException as e:
-                        logger.error(f"Error while starting stock scheduler: {e}")
-
-                if st.button(
-                    "Stop Daily Socks Scheduler",
-                    key="stop_daily_socks_scheduler",
-                    use_container_width=True,
-                    type="primary",
-                ):
-                    try:
-                        response = requests.post(
-                            f"{st.session_state.server_url}/stop_scheduler"
-                        )
-                        if response.status_code == 200:
-                            show_toast("Daily Socks Scheduler stopped successfully.")
-                            st.rerun()
-                        else:
-                            show_toast("❌ Failed to stop scheduler.")
-                    except requests.exceptions.RequestException as e:
-                        logger.error(f"Error while stopping stock scheduler: {e}")
-
-                if st.button(
-                    "Refresh Scheduler",
-                    key="refresh_scheduler",
-                    use_container_width=True,
-                ):
-                    try:
-                        response = requests.post(
-                            f"{st.session_state.server_url}/refresh_scheduler"
-                        )
-                        if response.status_code == 200:
-                            logger.info("Scheduler refreshed successfully.")
-                            st.session_state["pause_scheduler"] = False
-                            show_toast("Daily Socks Scheduler refreshed successfully.")
-                            st.rerun()
-                        else:
-                            logger.error("Failed to refresh scheduler.")
-                            show_toast("❌ Failed to refresh scheduler.")
-                    except requests.exceptions.RequestException as e:
-                        logger.error(f"Error while refreshing stock scheduler: {e}")
-
-                st.toggle(
-                    "Pause Scheduler",
-                    key="pause_scheduler",
-                    on_change=toggle_scheduler,
-                    disabled=scheduler_state() == 0,
-                )
-
-            with scheduler_divider.container(border=False):
-                st_vertical_divider(scheduler_section_height)
-
-            with scheduler_status.container(height=scheduler_section_height, border=False):
-                scheduler_status = get_scheduler_status()
-
-                if "error" in scheduler_status:
-                    st.error(scheduler_status["error"])
-                else:
-                    jobs = scheduler_status["status"]  # Dictionary containing job statuses
-                    all_stopped = all(
-                        jobs[job]["Paused"] == "Job not found" for job in jobs
+        with scheduler_buttons.container(height=scheduler_section_height, border=False):
+            if st.button(
+                "Start Daily Socks Scheduler",
+                key="start_daily_socks_scheduler",
+                use_container_width=True,
+            ):
+                try:
+                    response = requests.post(
+                        f"{st.session_state.server_url}/start_scheduler"
                     )
-                    all_running = all(jobs[job]["Paused"] == False for job in jobs)
+                    if response.status_code == 200:
+                        show_toast("Daily Socks Scheduler started successfully.")
+                        st.rerun()
+                    else:
+                        show_toast("❌ Failed to start scheduler.")
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Error while starting stock scheduler: {e}")
 
-                    if all_stopped:
-                        st.write("##### Scheduler Status:")
-                        st.warning("🚫 Scheduler is stopped. No active jobs.")
-                    elif all_running:
-                        st.write("##### Scheduler Status:")
-                        st.success("✅ Scheduler is running. All jobs are active.")
-                        with st.expander("Show Scheduler Details"):
-                            for job, details in jobs.items():
-                                paused = details["Paused"]
-                                next_run = details["Next Run"]
+            if st.button(
+                "Stop Daily Socks Scheduler",
+                key="stop_daily_socks_scheduler",
+                use_container_width=True,
+                type="primary",
+            ):
+                try:
+                    response = requests.post(
+                        f"{st.session_state.server_url}/stop_scheduler"
+                    )
+                    if response.status_code == 200:
+                        show_toast("Daily Socks Scheduler stopped successfully.")
+                        st.rerun()
+                    else:
+                        show_toast("❌ Failed to stop scheduler.")
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Error while stopping stock scheduler: {e}")
 
-                                if paused == "Job not found" or paused == True:
-                                    st.error(f"❌ **{job}** - **Stopped**")
-                                else:
-                                    st.success(
-                                        f"✅ **{job}** - Running | Next Run: {next_run}"
-                                    )
+            if st.button(
+                "Refresh Scheduler",
+                key="refresh_scheduler",
+                use_container_width=True,
+            ):
+                try:
+                    response = requests.post(
+                        f"{st.session_state.server_url}/refresh_scheduler"
+                    )
+                    if response.status_code == 200:
+                        logger.info("Scheduler refreshed successfully.")
+                        st.session_state["pause_scheduler"] = False
+                        show_toast("Daily Socks Scheduler refreshed successfully.")
+                        st.rerun()
+                    else:
+                        logger.error("Failed to refresh scheduler.")
+                        show_toast("❌ Failed to refresh scheduler.")
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Error while refreshing stock scheduler: {e}")
 
-daily_stocks_scheduler_section()
+            st.toggle(
+                "Pause Scheduler",
+                key="pause_scheduler",
+                on_change=toggle_scheduler,
+                disabled=scheduler_state() == 0,
+            )
+
+        with scheduler_divider.container(border=False):
+            st_vertical_divider(scheduler_section_height)
+
+        with scheduler_status.container(height=scheduler_section_height, border=False):
+            scheduler_response = get_scheduler_status()
+            if "error" in scheduler_response:
+                st.error(scheduler_status["error"])
+            else:
+                scheduler_status_response = get_scheduler_status()["status"]
+                scheduler_state_reponse = int(scheduler_status_response["State"])
+
+                if scheduler_state_reponse == 1:
+                    st.write("##### Scheduler Status:")
+                    st.success(
+                        f"✅ Scheduler is {SCHEDULER_STATE[scheduler_state_reponse]}."
+                    )
+                    logger.info(f"{scheduler_status_response["Jobs"]}")
+                    with st.expander("Show Scheduler Details"):
+                        for job, details in scheduler_status_response["Jobs"].items():
+                            if details == "Job not found":
+                                st.error(f"⚠️ **{job}** - **Job not found**")
+                            else:
+                                st.success(
+                                    f"**{job}** - Running | Next Run: {details}"
+                                )
+                else:
+                    st.write("##### Scheduler Status:")
+                    st.warning(
+                        f"🚫 Scheduler is {SCHEDULER_STATE[scheduler_state_reponse]}. No active jobs."
+                    )
